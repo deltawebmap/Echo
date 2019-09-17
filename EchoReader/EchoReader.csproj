@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,7 +8,14 @@
   <ItemGroup>
     <PackageReference Include="LiteDB" Version="4.1.4" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
+    <PackageReference Include="MongoDB.Bson" Version="2.9.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.9.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3-beta1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArkSaveEditor\ArkSaveEditor.csproj" />
+    <ProjectReference Include="..\EchoEntities\EchoEntities.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,9 +24,6 @@
     </Reference>
     <Reference Include="ArkHttpServer">
       <HintPath>..\..\ArkWebMap\backend\LibDelta\bin\Debug\netcoreapp2.1\ArkHttpServer.dll</HintPath>
-    </Reference>
-    <Reference Include="ArkSaveEditor">
-      <HintPath>..\..\ArkWebMap\backend\LibDelta\bin\Debug\netcoreapp2.1\ArkSaveEditor.dll</HintPath>
     </Reference>
     <Reference Include="ArkWebMapGatewayClient">
       <HintPath>..\..\ArkWebMap\backend\LibDelta\bin\Debug\netcoreapp2.1\ArkWebMapGatewayClient.dll</HintPath>

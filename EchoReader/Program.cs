@@ -1,7 +1,9 @@
-﻿using EchoReader.Entities;
+﻿using EchoEntities.Db;
+using EchoReader.Entities;
 using LiteDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -19,6 +21,13 @@ namespace EchoReader
         public static LiteCollection<ArkServerSerialized> servers_collection;
         public static Dictionary<string, ArkServer> cache; //Loaded servers in memory
 
+        public static MongoClient content_client;
+        public static IMongoDatabase content_database;
+        public static IMongoCollection<DbDino> content_dinos;
+        public static IMongoCollection<DbItem> content_items;
+        public static IMongoCollection<DbTribe> content_tribes;
+        public static IMongoCollection<DbPlayerProfile> content_player_profiles;
+
         public static EchoConfig config = new EchoConfig();
 
         static void Main(string[] args)
@@ -28,6 +37,30 @@ namespace EchoReader
             data_db = new LiteDatabase(config.data_db);
             servers_collection = data_db.GetCollection<ArkServerSerialized>("servers");
             cache = new Dictionary<string, ArkServer>();
+
+            //Clean up temporary files
+            string[] tempClean = Directory.GetFiles(config.temp_file_path);
+            foreach (string f in tempClean)
+                File.Delete(f);
+
+            //Load PrimalData. This is temporary
+            using (FileStream fs = new FileStream(@"C:\Users\Roman\source\repos\ArkWebMap\backend\ArkHttpServer\bin\Debug\netcoreapp2.1\primal_data.pdp", System.IO.FileMode.Open, FileAccess.Read))
+            {
+                //Load package
+                bool ok = ArkSaveEditor.ArkImports.ImportContentFromPackage(fs, (ArkSaveEditor.Entities.PrimalDataPackageMetadata metadata) =>
+                {
+                    return true;
+                });
+            }
+
+            content_client = new MongoClient(
+                "mongodb://localhost:27017"
+            );
+            content_database = content_client.GetDatabase("delta-staging");
+            content_dinos = content_database.GetCollection<DbDino>("dinos");
+            content_items = content_database.GetCollection<DbItem>("items");
+            content_tribes = content_database.GetCollection<DbTribe>("tribes");
+            content_player_profiles = content_database.GetCollection<DbPlayerProfile>("player_profiles");
 
             //Start server
             MainAsync().GetAwaiter().GetResult();

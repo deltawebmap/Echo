@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using EchoReader.Entities;
+using EchoReader.Exceptions;
 using LibDelta;
 
 namespace EchoReader.Http
@@ -45,8 +46,12 @@ namespace EchoReader.Http
                     await ServerFilePutService.OnHttpRequest(e, server);
                 else if (path == "/files" && method == RequestHttpMethod.get)
                     await Program.QuickWriteJsonToDoc(e, server.files);
+                else if (path == "/refresh" && method == RequestHttpMethod.post)
+                    await ServerRefreshService.OnHttpRequest(e, server);
                 else
                     throw new Exception("Not Found");
+            } catch (BaseError bx) {
+                await Program.QuickWriteToDoc(e, bx.msg, "text/plain", bx.code);
             } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + ex.StackTrace);

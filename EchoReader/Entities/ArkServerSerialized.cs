@@ -18,5 +18,10 @@ namespace EchoReader.Entities
         /// Content uploaded
         /// </summary>
         public List<ArkUploadedFile> files { get; set; }
+
+        /// <summary>
+        /// Used for version control
+        /// </summary>
+        public uint revision_id { get; set; }
     }
 }
