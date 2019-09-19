@@ -1,6 +1,7 @@
 ﻿using ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties;
 using ArkSaveEditor.World.WorldTypes;
 using EchoReader.Entities;
+using LibDeltaSystem.Db.Content;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,9 +10,9 @@ namespace EchoReader.Helpers
 {
     public static class ArkDinosaurStatHelper
     {
-        public static ArkDinosaurStats ReadStats(ArkPropertyReader reader, string propertyName, bool isByteProp)
+        public static DbArkDinosaurStats ReadStats(ArkPropertyReader reader, string propertyName, bool isByteProp)
         {
-            ArkDinosaurStats s = new ArkDinosaurStats();
+            DbArkDinosaurStats s = new DbArkDinosaurStats();
             var props = reader.GetPropertiesByName(propertyName);
             foreach (var p in props)
             {

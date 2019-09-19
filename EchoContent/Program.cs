@@ -1,6 +1,4 @@
-﻿using EchoReader.Entities;
-using LibDeltaSystem;
-using LiteDB;
+﻿using LibDeltaSystem;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using MongoDB.Driver;
@@ -12,43 +10,22 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EchoReader
+namespace EchoContent
 {
     class Program
     {
         public static Random rand;
-        public static LiteDatabase data_db;
-        public static LiteCollection<ArkServerSerialized> servers_collection;
-        public static Dictionary<string, ArkServer> cache; //Loaded servers in memory
-
         public static DeltaConnection conn;
 
-        public static EchoConfig config = new EchoConfig();
+        public const string ROOT_URL = "https://echo-content.deltamap.net";
 
         static void Main(string[] args)
         {
             //Init everything
             rand = new Random();
-            data_db = new LiteDatabase(config.data_db);
-            servers_collection = data_db.GetCollection<ArkServerSerialized>("servers");
-            cache = new Dictionary<string, ArkServer>();
-
-            //Connect to database
-            conn = new DeltaConnection(new DeltaConnectionConfig
-            {
-                env = "staging",
-                server_ip = "romanport.com",
-                server_port = 27017
-            });
-            conn.Connect().GetAwaiter().GetResult();
-
-            //Clean up temporary files
-            string[] tempClean = Directory.GetFiles(config.temp_file_path);
-            foreach (string f in tempClean)
-                File.Delete(f);
 
             //Load PrimalData. This is temporary
-            using (FileStream fs = new FileStream(@"C:\Users\Roman\source\repos\ArkWebMap\backend\ArkHttpServer\bin\Debug\netcoreapp2.1\primal_data.pdp", System.IO.FileMode.Open, FileAccess.Read))
+            using (FileStream fs = new FileStream(@"C:\Users\Roman\source\repos\ArkWebMap\backend\ArkHttpServer\bin\Debug\netcoreapp2.1\primal_data.pdp" /* @"/root/rp/prod/deltawebmap/echo/read/primal_data.pdp" */, System.IO.FileMode.Open, FileAccess.Read))
             {
                 //Load package
                 bool ok = ArkSaveEditor.ArkImports.ImportContentFromPackage(fs, (ArkSaveEditor.Entities.PrimalDataPackageMetadata metadata) =>
@@ -56,6 +33,10 @@ namespace EchoReader
                     return true;
                 });
             }
+
+            //Connect to database
+            conn = new DeltaConnection(JsonConvert.DeserializeObject<DeltaConnectionConfig>(File.ReadAllText(args[0])));
+            conn.Connect().GetAwaiter().GetResult();
 
             //Start server
             MainAsync().GetAwaiter().GetResult();
@@ -67,7 +48,7 @@ namespace EchoReader
                 .UseKestrel(options =>
                 {
                     IPAddress addr = IPAddress.Any;
-                    options.Listen(addr, 43298);
+                    options.Listen(addr, 43289);
 
                 })
                 .UseStartup<Program>()

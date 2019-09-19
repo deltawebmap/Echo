@@ -1,7 +1,7 @@
 ﻿using ArkSaveEditor.Entities.LowLevel.DotArk;
 using ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties;
-using EchoEntities.Db;
 using EchoReader.Entities;
+using LibDeltaSystem.Db.Content;
 using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
@@ -104,7 +104,7 @@ namespace EchoReader.Helpers
                 return;
 
             //Insert all
-            Program.content_items.InsertMany(inventoryItems);
+            Program.conn.content_items.InsertMany(inventoryItems);
         }
     }
 }

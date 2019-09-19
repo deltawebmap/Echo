@@ -5,9 +5,10 @@ using ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties;
 using ArkSaveEditor.Entities.LowLevel.Inline;
 using ArkSaveEditor.Entities.LowLevel.Inline.InlineProperties;
 using ArkSaveEditor.World;
-using EchoEntities.Db;
 using EchoReader.Exceptions;
 using EchoReader.Helpers;
+using LibDeltaSystem.Db.Content;
+using LibDeltaSystem.Db.System;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -180,12 +181,12 @@ namespace EchoReader.Entities
             {
                 var filterBuilder = Builders<DbDino>.Filter;
                 var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Lt("revision_id", revision_id);
-                await Program.content_dinos.DeleteManyAsync(filter);
+                await Program.conn.content_dinos.DeleteManyAsync(filter);
             }
             {
                 var filterBuilder = Builders<DbItem>.Filter;
                 var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Lt("revision_id", revision_id);
-                await Program.content_items.DeleteManyAsync(filter);
+                await Program.conn.content_items.DeleteManyAsync(filter);
             }
         }
 
@@ -231,6 +232,15 @@ namespace EchoReader.Entities
                 if (f.type == ArkUploadedFileType.ArkProfile)
                     await ProcessPlayerFile(await GetFileStream(f));
             }
+
+            //We'll now update the server in the database. Download it.
+            DbServer ser = await Program.conn.GetServerByIdAsync(id);
+            ser.revision_id = revision_id;
+            ser.latest_server_map = dotArkDs.binaryDataNames[0];
+            ser.latest_server_map_name = ser.latest_server_map;
+            ser.has_server_report = true;
+            ser.latest_server_time = dotArkDs.ark.gameTime;
+            await ser.UpdateAsync();
 
             //Save
             Save();
@@ -288,7 +298,7 @@ namespace EchoReader.Entities
             //Update or insert
             var filterBuilder = Builders<DbTribe>.Filter;
             var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Eq("tribe_id", output.tribe_id);
-            await Program.content_tribes.FindOneAndReplaceAsync<DbTribe>(filter, output, new FindOneAndReplaceOptions<DbTribe, DbTribe>
+            await Program.conn.content_tribes.FindOneAndReplaceAsync<DbTribe>(filter, output, new FindOneAndReplaceOptions<DbTribe, DbTribe>
             {
                 IsUpsert = true,
                 ReturnDocument = ReturnDocument.After
@@ -343,7 +353,7 @@ namespace EchoReader.Entities
             //Update or insert
             var filterBuilder = Builders<DbPlayerProfile>.Filter;
             var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Eq("steam_id", output.steam_id);
-            await Program.content_player_profiles.FindOneAndReplaceAsync<DbPlayerProfile>(filter, output, new FindOneAndReplaceOptions<DbPlayerProfile, DbPlayerProfile>
+            await Program.conn.content_player_profiles.FindOneAndReplaceAsync<DbPlayerProfile>(filter, output, new FindOneAndReplaceOptions<DbPlayerProfile, DbPlayerProfile>
             {
                 IsUpsert = true,
                 ReturnDocument = ReturnDocument.After
@@ -427,7 +437,7 @@ namespace EchoReader.Entities
             if (statusComponentReader.CheckIfValueExists("BaseCharacterLevel"))
                 db.base_level = statusComponentReader.GetInt32Property("BaseCharacterLevel");
             db.level = db.base_level;
-            db.tamed_levelups_applied = new ArkSaveEditor.World.WorldTypes.ArkDinosaurStats();
+            db.tamed_levelups_applied = new DbArkDinosaurStats();
 
             //Now, convert attributes that only exist on tamed dinosaurs.
             if (db.is_tamed)
@@ -460,7 +470,7 @@ namespace EchoReader.Entities
             //Update or insert
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Eq("tribe_id", db.tribe_id) & filterBuilder.Eq("dino_id", db.dino_id);
-            var response = Program.content_dinos.FindOneAndReplace<DbDino>(filter, db, new FindOneAndReplaceOptions<DbDino, DbDino>
+            var response = Program.conn.content_dinos.FindOneAndReplace<DbDino>(filter, db, new FindOneAndReplaceOptions<DbDino, DbDino>
             {
                 IsUpsert = true,
                 ReturnDocument = ReturnDocument.After
