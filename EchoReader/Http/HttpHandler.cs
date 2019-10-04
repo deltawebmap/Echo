@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using EchoReader.Entities;
 using EchoReader.Exceptions;
-using LibDelta;
 
 namespace EchoReader.Http
 {
@@ -15,7 +14,7 @@ namespace EchoReader.Http
             try
             {
                 //Authenticate this server
-                var serverData = await DeltaAuth.AuthenticateServer(e.Request.Headers["X-Delta-Server-ID"], e.Request.Headers["X-Delta-Server-Creds"]);
+                var serverData = await Program.conn.AuthenticateServerTokenAsync(e.Request.Headers["X-Delta-Server-Creds"]);
 
                 //If auth failed, stop
                 if (serverData == null)
@@ -23,17 +22,17 @@ namespace EchoReader.Http
 
                 //Try to find the ArkServer
                 ArkServer server;
-                if (Program.cache.ContainsKey(serverData.server_id)) //If it exists in the load cache, use that
-                    server = Program.cache[serverData.server_id];
-                else if (Program.servers_collection.FindById(serverData.server_id) != null) //Check if a serialized copy exists on disk
+                if (Program.cache.ContainsKey(serverData.id)) //If it exists in the load cache, use that
+                    server = Program.cache[serverData.id];
+                else if (Program.servers_collection.FindById(serverData.id) != null) //Check if a serialized copy exists on disk
                 {
                     server = new ArkServer();
-                    server.Load(Program.servers_collection.FindById(serverData.server_id));
+                    server.Load(Program.servers_collection.FindById(serverData.id));
                     Program.cache.Add(server.id, server);
                 } else //This is the first time we've accessed this server. Create a new server
                 {
                     server = new ArkServer();
-                    server.id = serverData.server_id;
+                    server.id = serverData.id;
                     server.files = new List<ArkUploadedFile>();
                     server.Save();
                     Program.cache.Add(server.id, server);

@@ -130,5 +130,10 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk
 
             //Now, the overwritten function will run.
         }
+
+        public virtual int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

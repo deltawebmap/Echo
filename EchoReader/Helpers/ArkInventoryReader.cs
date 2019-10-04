@@ -2,6 +2,7 @@
 using ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties;
 using EchoReader.Entities;
 using LibDeltaSystem.Db.Content;
+using LibDeltaSystem.Entities;
 using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
@@ -57,7 +58,7 @@ namespace EchoReader.Helpers
             return item;
         }
 
-        private static List<DbItem> ReadItemsFromRefs(List<ObjectProperty> objs, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, ObjectId parent, DbInventoryParentType parentType, int tribeId, string serverId, uint revisionId)
+        private static List<DbItem> ReadItemsFromRefs(List<ObjectProperty> objs, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, string parent, DbInventoryParentType parentType, int tribeId, string serverId, uint revisionId)
         {
             List<DbItem> items = new List<DbItem>();
             foreach (var o in objs)
@@ -71,7 +72,7 @@ namespace EchoReader.Helpers
                 obj.parent_type = parentType;
                 obj.tribe_id = tribeId;
                 obj.server_id = serverId;
-                obj.revision_id = revisionId;
+                obj.token = obj.item_id.ToString();
 
                 //Add
                 items.Add(obj);
@@ -90,7 +91,7 @@ namespace EchoReader.Helpers
         /// <param name="tribeId"></param>
         /// <param name="serverId"></param>
         /// <returns></returns>
-        public static void SaveInventory(DotArkGameObject obj, ArkPropertyReader reader, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, ObjectId parent, DbInventoryParentType parentType, int tribeId, string serverId, uint revisionId)
+        public static void SaveInventory(DotArkGameObject obj, ArkPropertyReader reader, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, DeltaContentDbSyncSession<DbItem> sync, string parent, DbInventoryParentType parentType, int tribeId, string serverId, uint revisionId)
         {
             //Get inventory items
             List<DbItem> inventoryItems;
@@ -104,7 +105,8 @@ namespace EchoReader.Helpers
                 return;
 
             //Insert all
-            Program.conn.content_items.InsertMany(inventoryItems);
+            /*foreach (var i in inventoryItems)
+                sync.UpdateOne(i, i.token).GetAwaiter().GetResult();*/
         }
     }
 }

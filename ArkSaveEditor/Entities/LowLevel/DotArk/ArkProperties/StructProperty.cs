@@ -34,5 +34,11 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties
             //Write the struct data.
             structData.WriteStruct(s, go, f, ms);
         }
+
+        public override int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            //TODO!
+            return pos;
+        }
     }
 }

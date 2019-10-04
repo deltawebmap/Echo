@@ -26,5 +26,14 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties
             //Write
             ms.WriteByte(value);
         }
+
+        public override int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            if((bool)this.data == true)
+                buf[pos] = 0x01;
+            else
+                buf[pos] = 0x00;
+            return pos + 1;
+        }
     }
 }

@@ -79,6 +79,12 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties
                 throw new Exception($"Unknown ObjectProperty length, {size}. Cannot write.");
             }
         }
+
+        public override int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            //Don't do
+            return pos;
+        }
     }
 
     public enum ObjectPropertyType

@@ -22,5 +22,12 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties
             //Get name table entry
             ms.WriteArkClassname((ArkClassName)data, s);
         }
+
+        public override int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            byte[] b = Encoding.UTF8.GetBytes(((ArkClassName)data).classname);
+            b.CopyTo(buf, pos);
+            return pos + b.Length;
+        }
     }
 }

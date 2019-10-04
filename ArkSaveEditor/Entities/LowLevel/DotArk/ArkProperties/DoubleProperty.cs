@@ -22,5 +22,12 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties
             //Write double
             ms.WriteDouble((double)data);
         }
+
+        public override int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            byte[] b = BitConverter.GetBytes((Double)data);
+            b.CopyTo(buf, pos);
+            return pos + b.Length;
+        }
     }
 }

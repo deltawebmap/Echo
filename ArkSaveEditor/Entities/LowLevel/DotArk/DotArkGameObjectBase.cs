@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties;
+using System.Security.Cryptography;
 
 namespace ArkSaveEditor.Entities.LowLevel.DotArk
 {
@@ -22,6 +23,25 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk
         // Prop data
         //public Dictionary<string, DotArkProperty> props;
         public List<DotArkProperty> props;
+
+        public string GetHash(List<DotArkProperty> p, int bufSize = 16384)
+        {
+            //Create hash code
+            byte[] hashCompute = new byte[bufSize];
+            int pos = 0;
+            foreach (var ps in p)
+                pos = ps.WriteToHashBuffer(hashCompute, pos);
+
+            //Compute hash code
+            string hash;
+            using (SHA1Managed sha1 = new SHA1Managed())
+            {
+                byte[] hashBytes = sha1.ComputeHash(hashCompute);
+                hash = string.Concat(hashBytes.Select(b => b.ToString("x2")));
+            }
+
+            return hash;
+        }
 
         public DotArkProperty[] GetPropsByName(string name)
         {

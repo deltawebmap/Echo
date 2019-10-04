@@ -50,5 +50,14 @@ namespace ArkSaveEditor.Entities.LowLevel.DotArk.ArkProperties
             else
                 ms.WriteArkClassname(enumValue, s);
         }
+
+        public override int WriteToHashBuffer(byte[] buf, int pos)
+        {
+            if (isNormalByte)
+                buf[pos] = byteValue;
+            else
+                buf[pos] = 0x00;
+            return pos + 1;
+        }
     }
 }

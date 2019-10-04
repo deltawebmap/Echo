@@ -16,16 +16,20 @@ namespace EchoContent
     {
         public static Random rand;
         public static DeltaConnection conn;
+        public static EchoReaderConfig config;
 
         public const string ROOT_URL = "https://echo-content.deltamap.net";
 
         static void Main(string[] args)
         {
+            //Read config
+            config = JsonConvert.DeserializeObject<EchoReaderConfig>(File.ReadAllText(args[0]));
+
             //Init everything
             rand = new Random();
 
             //Load PrimalData. This is temporary
-            using (FileStream fs = new FileStream(@"C:\Users\Roman\source\repos\ArkWebMap\backend\ArkHttpServer\bin\Debug\netcoreapp2.1\primal_data.pdp" /* @"/root/rp/prod/deltawebmap/echo/read/primal_data.pdp" */, System.IO.FileMode.Open, FileAccess.Read))
+            using (FileStream fs = new FileStream(config.pdp_file, System.IO.FileMode.Open, FileAccess.Read))
             {
                 //Load package
                 bool ok = ArkSaveEditor.ArkImports.ImportContentFromPackage(fs, (ArkSaveEditor.Entities.PrimalDataPackageMetadata metadata) =>
@@ -35,7 +39,7 @@ namespace EchoContent
             }
 
             //Connect to database
-            conn = new DeltaConnection(JsonConvert.DeserializeObject<DeltaConnectionConfig>(File.ReadAllText(args[0])));
+            conn = new DeltaConnection(config.database_config_file);
             conn.Connect().GetAwaiter().GetResult();
 
             //Start server

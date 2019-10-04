@@ -11,6 +11,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using ArkWebMapGatewayClient.Sender;
 
 namespace EchoReader
 {
@@ -22,6 +23,7 @@ namespace EchoReader
         public static Dictionary<string, ArkServer> cache; //Loaded servers in memory
 
         public static DeltaConnection conn;
+        public static SenderConnection gateway;
 
         public static EchoConfig config = new EchoConfig();
 
@@ -34,13 +36,11 @@ namespace EchoReader
             cache = new Dictionary<string, ArkServer>();
 
             //Connect to database
-            conn = new DeltaConnection(new DeltaConnectionConfig
-            {
-                env = "staging",
-                server_ip = "romanport.com",
-                server_port = 27017
-            });
+            conn = new DeltaConnection(config.db_config);
             conn.Connect().GetAwaiter().GetResult();
+
+            //Connect to the gateway as a sender
+            gateway = SenderConnection.CreateClient("echoreader", "", 0, 0, false, config.key);
 
             //Clean up temporary files
             string[] tempClean = Directory.GetFiles(config.temp_file_path);
@@ -48,7 +48,7 @@ namespace EchoReader
                 File.Delete(f);
 
             //Load PrimalData. This is temporary
-            using (FileStream fs = new FileStream(@"C:\Users\Roman\source\repos\ArkWebMap\backend\ArkHttpServer\bin\Debug\netcoreapp2.1\primal_data.pdp", System.IO.FileMode.Open, FileAccess.Read))
+            using (FileStream fs = new FileStream(config.pdp_file, System.IO.FileMode.Open, FileAccess.Read))
             {
                 //Load package
                 bool ok = ArkSaveEditor.ArkImports.ImportContentFromPackage(fs, (ArkSaveEditor.Entities.PrimalDataPackageMetadata metadata) =>
@@ -67,7 +67,7 @@ namespace EchoReader
                 .UseKestrel(options =>
                 {
                     IPAddress addr = IPAddress.Any;
-                    options.Listen(addr, 43298);
+                    options.Listen(addr, config.port);
 
                 })
                 .UseStartup<Program>()
