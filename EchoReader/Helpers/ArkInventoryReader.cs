@@ -58,14 +58,20 @@ namespace EchoReader.Helpers
             return item;
         }
 
-        private static List<DbItem> ReadItemsFromRefs(List<ObjectProperty> objs, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, string parent, DbInventoryParentType parentType, int tribeId, string serverId, uint revisionId)
+        private static void ReadItemsFromRefs(List<ObjectProperty> objs, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, string parent, DbInventoryParentType parentType, int tribeId, string serverId, DeltaContentDbSyncSession<DbItem> sync)
         {
-            List<DbItem> items = new List<DbItem>();
             foreach (var o in objs)
             {
                 //Read
                 var reader = new ArkPropertyReader(o.gameObjectRef.ReadPropsFromFile(deser));
                 var obj = ReadItem(o.gameObjectRef, reader);
+
+                //Get the hash
+                string hash = obj.GetHash();
+
+                //Check if update is required
+                if (!sync.CheckIfUpdateRequired(obj.item_id.ToString(), hash))
+                    continue;
 
                 //Set some database info
                 obj.parent_id = parent.ToString();
@@ -75,9 +81,8 @@ namespace EchoReader.Helpers
                 obj.token = obj.item_id.ToString();
 
                 //Add
-                items.Add(obj);
+                sync.UpdateOne(obj, obj.item_id.ToString(), hash).GetAwaiter().GetResult();
             }
-            return items;
         }
 
         /// <summary>
@@ -91,22 +96,10 @@ namespace EchoReader.Helpers
         /// <param name="tribeId"></param>
         /// <param name="serverId"></param>
         /// <returns></returns>
-        public static void SaveInventory(DotArkGameObject obj, ArkPropertyReader reader, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, DeltaContentDbSyncSession<DbItem> sync, string parent, DbInventoryParentType parentType, int tribeId, string serverId, uint revisionId)
+        public static void SaveInventory(DotArkGameObject obj, ArkPropertyReader reader, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, DeltaContentDbSyncSession<DbItem> sync, string parent, DbInventoryParentType parentType, int tribeId, string serverId)
         {
-            //Get inventory items
-            List<DbItem> inventoryItems;
-            if (!reader.HasProperty("InventoryItems"))
-                return;
-            else
-                inventoryItems = ReadItemsFromRefs(((ArrayProperty<ObjectProperty>)reader.GetSingleProperty("InventoryItems")).items, deser, parent, parentType, tribeId, serverId, revisionId);
-
-            //Stop if there are no actions
-            if (inventoryItems.Count == 0)
-                return;
-
-            //Insert all
-            /*foreach (var i in inventoryItems)
-                sync.UpdateOne(i, i.token).GetAwaiter().GetResult();*/
+            if (reader.HasProperty("InventoryItems"))
+                ReadItemsFromRefs(((ArrayProperty<ObjectProperty>)reader.GetSingleProperty("InventoryItems")).items, deser, parent, parentType, tribeId, serverId, sync);
         }
     }
 }

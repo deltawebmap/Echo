@@ -17,6 +17,7 @@ namespace EchoContent
         public static Random rand;
         public static DeltaConnection conn;
         public static EchoReaderConfig config;
+        public static Dictionary<string, ArkSaveEditor.Entities.ArkMapData> ark_maps;
 
         public const string ROOT_URL = "https://echo-content.deltamap.net";
 
@@ -38,8 +39,11 @@ namespace EchoContent
                 });
             }
 
+            //Load maps
+            ark_maps = JsonConvert.DeserializeObject<Dictionary<string, ArkSaveEditor.Entities.ArkMapData>>(File.ReadAllText(config.map_config_file));
+
             //Connect to database
-            conn = new DeltaConnection(config.database_config_file);
+            conn = new DeltaConnection(config.database_config_file, "echo-content", 0, 0);
             conn.Connect().GetAwaiter().GetResult();
 
             //Start server

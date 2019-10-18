@@ -31,7 +31,7 @@ namespace EchoContent.Http.World
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("revision_id", server.revision_id);
+            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var responseList = await response.ToListAsync();
 

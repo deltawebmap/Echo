@@ -67,7 +67,7 @@ namespace EchoContent.Http.World
         private static async Task<DbDino> GetDinosaur(ulong id, DbServer server, int tribeId)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("revision_id", server.revision_id) & filterBuilder.Eq("dino_id", id);
+            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("dino_id", id);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)
@@ -78,7 +78,7 @@ namespace EchoContent.Http.World
         private static async Task<List<DbItem>> GetItems(DbDino dino, DbServer server, int tribeId)
         {
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("revision_id", server.revision_id) & filterBuilder.Eq("parent_id", dino._id) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
+            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("parent_id", dino.token) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
             var response = await server.conn.content_items.FindAsync(filter);
             var items = await response.ToListAsync();
             return items;

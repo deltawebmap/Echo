@@ -79,7 +79,7 @@ namespace EchoContent.Http.World
         {
             //Find all
             var filterBuilder = Builders<DbPlayerProfile>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("revision_id", server.revision_id);
+            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
             var response = await server.conn.content_player_profiles.FindAsync(filter);
             var profile = await response.ToListAsync();
             return profile;
@@ -88,7 +88,7 @@ namespace EchoContent.Http.World
         private static async Task<List<DbDino>> GetDinosaurs(DbServer server, int tribeId)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("revision_id", server.revision_id);
+            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.ToListAsync();
             return dino;

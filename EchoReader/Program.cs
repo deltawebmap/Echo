@@ -36,7 +36,7 @@ namespace EchoReader
             cache = new Dictionary<string, ArkServer>();
 
             //Connect to database
-            conn = new DeltaConnection(config.db_config);
+            conn = new DeltaConnection(config.db_config, "echo-reader", 0, 0);
             conn.Connect().GetAwaiter().GetResult();
 
             //Connect to the gateway as a sender

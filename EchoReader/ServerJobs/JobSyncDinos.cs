@@ -16,12 +16,14 @@ namespace EchoReader.ServerJobs
         public ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser;
         public string server_id;
         public DeltaContentDbSyncSession<DbDino> sync;
+        public DeltaContentDbSyncSession<DbItem> item_sync;
 
-        public JobSyncDinos(ArkServer s, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser)
+        public JobSyncDinos(ArkServer s, ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer deser, DeltaContentDbSyncSession<DbItem> item_sync)
         {
             server_id = s.id;
             sync = new DeltaContentDbSyncSession<DbDino>(Program.conn.content_dinos, server_id);
             this.deser = deser;
+            this.item_sync = item_sync;
         }
 
         public async Task End()
@@ -47,6 +49,17 @@ namespace EchoReader.ServerJobs
             //Get dino token
             string token = GetDinoToken(reader).ToString();
 
+            //Update dino inventory items
+            if (reader.HasProperty("MyInventoryComponent"))
+            {
+                //Get the referenced inventory and open a reader on it
+                var inventoryComponent = reader.GetGameObjectRef("MyInventoryComponent");
+                var inventoryComponentReader = new ArkPropertyReader(inventoryComponent.ReadPropsFromFile(deser));
+
+                //Upload all
+                ArkInventoryReader.SaveInventory(inventoryComponent, inventoryComponentReader, deser, item_sync, token, DbInventoryParentType.Dino, reader.GetInt32Property("TargetingTeam"), server_id);
+            }
+
             //First, check if an update is even needed.
             if (!sync.CheckIfUpdateRequired(token, hash))
                 return;
@@ -56,17 +69,6 @@ namespace EchoReader.ServerJobs
 
             //Update
             await sync.UpdateOne(dino, token, hash);
-
-            /*//Now, insert items
-            if(reader.HasProperty("MyInventoryComponent"))
-            {
-                //Get the referenced inventory and open a reader on it
-                var inventoryComponent = reader.GetGameObjectRef("MyInventoryComponent");
-                var inventoryComponentReader = new ArkPropertyReader(inventoryComponent.ReadPropsFromFile(deser));
-
-                //Upload all
-                ArkInventoryReader.SaveInventory(inventoryComponent, inventoryComponentReader, deser, input.itemSyncSession, db.token, DbInventoryParentType.Dino, db.tribe_id, id, revision_id);
-            }*/
         }
 
         private UInt64 GetDinoToken(ArkPropertyReader reader)

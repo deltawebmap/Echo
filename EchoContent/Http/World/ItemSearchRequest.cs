@@ -66,7 +66,7 @@ namespace EchoContent.Http.World
                     }
                     
                     //Get dino
-                    DbDino dino = await GetDinosaur(i.parent_id, server);
+                    DbDino dino = await GetDinosaurByToken(i.parent_id, server);
                     if (dino == null)
                         continue;
 
@@ -127,7 +127,18 @@ namespace EchoContent.Http.World
         private static async Task<DbDino> GetDinosaur(string id, DbServer server)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("_id", ObjectId.Parse(id)) & filterBuilder.Eq("revision_id", server.revision_id);
+            var filter = filterBuilder.Eq("_id", ObjectId.Parse(id));
+            var response = await server.conn.content_dinos.FindAsync(filter);
+            var dino = await response.FirstOrDefaultAsync();
+            if (dino == null)
+                throw new StandardError("Dinosaur not found.", "This dinosaur ID is invalid.", 404);
+            return dino;
+        }
+
+        private static async Task<DbDino> GetDinosaurByToken(string token, DbServer server)
+        {
+            var filterBuilder = Builders<DbDino>.Filter;
+            var filter = filterBuilder.Eq("token", token);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)
@@ -139,7 +150,7 @@ namespace EchoContent.Http.World
         {
             var sortBuilder = Builders<DbItem>.Sort;
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("revision_id", server.revision_id) & filterBuilder.Eq("classname", classname);
+            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("classname", classname);
             var response = await server.conn.content_items.FindAsync(filter, new FindOptions<DbItem, DbItem>
             {
                 

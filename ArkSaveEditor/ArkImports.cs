@@ -89,9 +89,12 @@ namespace ArkSaveEditor
 
         public static ArkDinoEntry GetDinoDataByClassname(string classname)
         {
+            if (classname.EndsWith("_C"))
+                classname = classname.Substring(classname.Length - 2);
+
             foreach (var d in dino_entries)
             {
-                if (d.classname+"_C" == classname)
+                if (d.classname == classname)
                     return d;
             }
             return null;

@@ -10,7 +10,7 @@ namespace EchoReader
         public string data_db = @"E:\EchoReader\data.db";
         public string temp_file_path = @"E:\EchoReader\temp\";
         public string pdp_file = @"primal_data.pdp";
-        public string db_config;
+        public string db_config = @"E:\database_config.json";
         public string key;
         public int port = 43298;
     }

@@ -27,7 +27,9 @@ namespace EchoContent.Http.World
                 endpoint_tribes = baseUrl + "/tribes/" + tribeId + "/info",
                 endpoint_tribes_dino = baseUrl + "/tribes/" + tribeId + "/dinos/{dino}",
                 endpoint_tribes_itemsearch = baseUrl + "/tribes/" + tribeId + "/items/?q={query}",
-                endpoint_tribes_overview = baseUrl + "/tribes/" + tribeId + "/overview"
+                endpoint_tribes_overview = baseUrl + "/tribes/" + tribeId + "/overview",
+                endpoint_tribes_dino_stats = baseUrl + "/tribes/" + tribeId + "/dino_stats",
+                endpoint_tribes_log = baseUrl + "/tribes/" + tribeId + "/log?page=0&limit=200"
             };
 
             //Write
@@ -49,6 +51,8 @@ namespace EchoContent.Http.World
             public string endpoint_tribes_itemsearch; //Item search endpoint
             public string endpoint_tribes_dino; //Dino endpoint
             public string endpoint_tribes_overview; //Tribe properties list
+            public string endpoint_tribes_dino_stats; //Tribe dino stats
+            public string endpoint_tribes_log; //Tribe log
         }
     }
 }

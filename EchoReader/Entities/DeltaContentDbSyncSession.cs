@@ -116,7 +116,7 @@ namespace EchoReader.Entities
                     IsUpsert = true
                 });
             }
-            Console.WriteLine("updating " + hash);
+            //Console.WriteLine("updating " + hash);
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace EchoReader.Entities
             if(queue.Count > 0)
             {
                 await collection.InsertManyAsync(queue);
-                Console.WriteLine("wrote " + queue.Count);
+                //Console.WriteLine("wrote " + queue.Count);
                 queue.Clear();
             }
 
