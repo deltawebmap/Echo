@@ -1,6 +1,5 @@
 ﻿using EchoReader.Entities;
 using LibDeltaSystem;
-using LiteDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using MongoDB.Driver;
@@ -12,14 +11,13 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using ArkWebMapGatewayClient.Sender;
+using EchoReader.ArkFileReader;
 
 namespace EchoReader
 {
     class Program
     {
         public static Random rand;
-        public static LiteDatabase data_db;
-        public static LiteCollection<ArkServerSerialized> servers_collection;
         public static Dictionary<string, ArkServer> cache; //Loaded servers in memory
 
         public static DeltaConnection conn;
@@ -29,10 +27,12 @@ namespace EchoReader
 
         static void Main(string[] args)
         {
+            //Open config
+            config = JsonConvert.DeserializeObject<EchoConfig>(File.ReadAllText(args[0]));
+            //config = new EchoConfig();
+            
             //Init everything
             rand = new Random();
-            data_db = new LiteDatabase(config.data_db);
-            servers_collection = data_db.GetCollection<ArkServerSerialized>("servers");
             cache = new Dictionary<string, ArkServer>();
 
             //Connect to database
@@ -56,6 +56,16 @@ namespace EchoReader
                     return true;
                 });
             }
+
+            //TEST
+            /*FastRead.FastReadSession s = new FastRead.FastReadSession();
+            MemoryStream ms = new MemoryStream();
+            new FileStream(@"C:\Program Files (x86)\Steam\steamapps\common\ARK\ShooterGame\Saved\SavedArks\Extinction.ark", FileMode.Open, FileAccess.Read).CopyTo(ms);
+            ms.Position = 0;
+            DateTime start = DateTime.UtcNow;
+            s.OpenSession(ms, "TEST").GetAwaiter().GetResult();
+            Console.WriteLine((DateTime.UtcNow - start).TotalMilliseconds + "ms");
+            Console.ReadLine();*/
 
             //Start server
             MainAsync().GetAwaiter().GetResult();

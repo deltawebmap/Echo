@@ -31,7 +31,10 @@ namespace EchoReader.Entities
         /// </summary>
         public List<string> used_tokens;
 
-        private List<T> queue = new List<T>();
+        /// <summary>
+        /// Saves actions to use
+        /// </summary>
+        private List<WriteModel<T>> actions;
 
         private List<T> old = new List<T>();
 
@@ -45,6 +48,7 @@ namespace EchoReader.Entities
             this.collection = collec;
             this.server_id = server_id;
             this.used_tokens = new List<string>();
+            this.actions = new List<WriteModel<T>>();
 
             //Get
             var filterBuilder = Builders<T>.Filter;
@@ -99,24 +103,12 @@ namespace EchoReader.Entities
             if (!used_tokens.Contains(token))
                 used_tokens.Add(token);
 
-            //Find this item if it's ever existed
-            bool isInsert = old.Where(x => (string)tokenPropInfo.GetValue(x) == token).Count() == 0;
-
-            if (isInsert)
-            {
-                //Queue it for faster use
-                queue.Add(data);
-            } else
-            {
-                //Just update it now
-                var filterBuilder = Builders<T>.Filter;
-                var filter = filterBuilder.Eq("server_id", server_id) & filterBuilder.Eq("token", token);
-                await collection.FindOneAndReplaceAsync(filter, data, new FindOneAndReplaceOptions<T, T>
-                {
-                    IsUpsert = true
-                });
-            }
-            //Console.WriteLine("updating " + hash);
+            //Just update it now
+            var filterBuilder = Builders<T>.Filter;
+            var filter = filterBuilder.Eq("server_id", server_id) & filterBuilder.Eq("token", token);
+            var a = new ReplaceOneModel<T>(filter, data);
+            a.IsUpsert = true;
+            actions.Add(a);
         }
 
         /// <summary>
@@ -129,12 +121,11 @@ namespace EchoReader.Entities
             var filterBuilder = Builders<T>.Filter;
             var filter = filterBuilder.Eq("server_id", server_id) & (!filterBuilder.In("token", used_tokens));
 
-            //Add
-            if(queue.Count > 0)
+            //Apply actions
+            if(actions.Count > 0)
             {
-                await collection.InsertManyAsync(queue);
-                //Console.WriteLine("wrote " + queue.Count);
-                queue.Clear();
+                await collection.BulkWriteAsync(actions);
+                actions.Clear();
             }
 
             //Remove all of these

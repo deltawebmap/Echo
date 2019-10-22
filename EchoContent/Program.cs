@@ -1,4 +1,5 @@
 ﻿using LibDeltaSystem;
+using LibDeltaSystem.Db.Content;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using MongoDB.Driver;

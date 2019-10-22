@@ -1,4 +1,5 @@
 ﻿using EchoReader.Entities;
+using LibDeltaSystem.Db.System.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;

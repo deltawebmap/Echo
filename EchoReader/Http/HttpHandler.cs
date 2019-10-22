@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EchoReader.Entities;
 using EchoReader.Exceptions;
+using LibDeltaSystem.Db.System;
 
 namespace EchoReader.Http
 {
@@ -11,33 +12,42 @@ namespace EchoReader.Http
     {
         public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e)
         {
+            //Authenticate this server
+            var serverData = await Program.conn.AuthenticateServerTokenAsync(e.Request.Headers["X-Delta-Server-Creds"]);
+
+            //If auth failed, stop
+            if (serverData == null)
+            {
+                await Program.QuickWriteToDoc(e, "Server authentication failed.", "text/plain", 401);
+                return;
+            }
+
+            //Try to find the ArkServer
+            ArkServer server;
+            if (Program.cache.ContainsKey(serverData.id)) //If it exists in the load cache, use that
+                server = Program.cache[serverData.id];
+            else
+            {
+                //Get from db
+                server = new ArkServer
+                {
+                    id = serverData.id,
+                    files = serverData.echo_files
+                };
+                if (server.files == null)
+                    server.files = new List<LibDeltaSystem.Db.System.Entities.ServerEchoUploadedFile>();
+                Program.cache.Add(server.id, server);
+            }
+
+            //Stop if this server is already busy
+            if(server.busy)
+            {
+                await Program.QuickWriteToDoc(e, "This Ark server is busy processing an earlier request, try again shortly...", "text/plain", 400);
+                return;
+            }
+            server.busy = true;
             try
             {
-                //Authenticate this server
-                var serverData = await Program.conn.AuthenticateServerTokenAsync(e.Request.Headers["X-Delta-Server-Creds"]);
-
-                //If auth failed, stop
-                if (serverData == null)
-                    throw new Exception("Server authentication failed.");
-
-                //Try to find the ArkServer
-                ArkServer server;
-                if (Program.cache.ContainsKey(serverData.id)) //If it exists in the load cache, use that
-                    server = Program.cache[serverData.id];
-                else if (Program.servers_collection.FindById(serverData.id) != null) //Check if a serialized copy exists on disk
-                {
-                    server = new ArkServer();
-                    server.Load(Program.servers_collection.FindById(serverData.id));
-                    Program.cache.Add(server.id, server);
-                } else //This is the first time we've accessed this server. Create a new server
-                {
-                    server = new ArkServer();
-                    server.id = serverData.id;
-                    server.files = new List<ArkUploadedFile>();
-                    server.Save();
-                    Program.cache.Add(server.id, server);
-                }
-
                 //Find path
                 string path = e.Request.Path.ToString();
                 var method = Program.FindRequestMethod(e);
@@ -56,6 +66,7 @@ namespace EchoReader.Http
                 Console.WriteLine(ex.Message + ex.StackTrace);
                 await Program.QuickWriteToDoc(e, "Error", "text/plain", 500);
             }
+            server.busy = false;
         }
     }
 }

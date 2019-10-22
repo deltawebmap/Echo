@@ -1,4 +1,5 @@
 ﻿using EchoReader.Entities;
+using LibDeltaSystem.Db.System.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,7 +16,7 @@ namespace EchoReader.Http
             ArkUploadedFileType type = Enum.Parse<ArkUploadedFileType>(e.Request.Headers["X-Delta-File-Type"]);
 
             //Now, put
-            ArkUploadedFile file = await server.PutFile(type, name, e.Request.Body);
+            ServerEchoUploadedFile file = await server.PutFile(type, name, e.Request.Body);
 
             //Respond with file data
             await Program.QuickWriteJsonToDoc(e, file);

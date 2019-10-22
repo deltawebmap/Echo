@@ -41,39 +41,12 @@ namespace EchoReader.Entities
         /// <summary>
         /// Content uploaded
         /// </summary>
-        public List<ArkUploadedFile> files;
+        public List<ServerEchoUploadedFile> files;
 
         /// <summary>
-        /// Used for version control
+        /// Is the system busy refreshing?
         /// </summary>
-        public uint revision_id { get; set; }
-
-        /// <summary>
-        /// Saves and changes to disk
-        /// </summary>
-        public void Save()
-        {
-            //Write serilaized
-            ArkServerSerialized ser = new ArkServerSerialized
-            {
-                files = files,
-                _id = id,
-                revision_id = revision_id
-            };
-
-            //Save
-            Program.servers_collection.Upsert(ser);
-        }
-
-        /// <summary>
-        /// Loads all settings from disk
-        /// </summary>
-        public void Load(ArkServerSerialized ser)
-        {
-            id = ser._id;
-            files = ser.files;
-            revision_id = ser.revision_id;
-        }
+        public bool busy = false;
 
         /// <summary>
         /// Returns a file's metadata. If it doesn't exist, this returns null
@@ -81,7 +54,7 @@ namespace EchoReader.Entities
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public ArkUploadedFile GetFileMeta(ArkUploadedFileType type, string name)
+        public ServerEchoUploadedFile GetFileMeta(ArkUploadedFileType type, string name)
         {
             //Try to find
             var results = files.Where(x => x.type == type && x.name == name);
@@ -98,7 +71,7 @@ namespace EchoReader.Entities
         /// <returns></returns>
         public async Task<Stream> GetRequiredFileStream(ArkUploadedFileType type, string name)
         {
-            ArkUploadedFile meta = GetFileMeta(type, name);
+            ServerEchoUploadedFile meta = GetFileMeta(type, name);
             if (meta == null)
                 throw new MissingRequiredFileException(name, type);
             return await GetFileStream(meta);
@@ -109,10 +82,11 @@ namespace EchoReader.Entities
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        public static async Task<Stream> GetFileStream(ArkUploadedFile f)
+        public static async Task<Stream> GetFileStream(ServerEchoUploadedFile f)
         {
             //Open GZIP stream
-            TempFileStream ts = TempFileStream.OpenTemp();
+            //TempFileStream ts = TempFileStream.OpenTemp();
+            MemoryStream ts = new MemoryStream();
             using (FileStream fs = new FileStream(Program.config.content_uploads_path + f.token, FileMode.Open, FileAccess.Read))
             {
                 using (GZipStream gz = new GZipStream(fs, CompressionMode.Decompress))
@@ -129,7 +103,7 @@ namespace EchoReader.Entities
         /// <param name="name">The name of the file.</param>
         /// <param name="compressed">The data for this file.</param>
         /// <returns></returns>
-        public async Task<ArkUploadedFile> PutFile(ArkUploadedFileType type, string name, Stream compressed)
+        public async Task<ServerEchoUploadedFile> PutFile(ArkUploadedFileType type, string name, Stream compressed)
         {
             //Generate a new token
             string token = Program.GenerateRandomString(32);
@@ -145,7 +119,7 @@ namespace EchoReader.Entities
             }
 
             //If there is already a file with this name, get it and remove it
-            ArkUploadedFile file = GetFileMeta(type, name);
+            ServerEchoUploadedFile file = GetFileMeta(type, name);
             if(file != null)
             {
                 File.Delete(Program.config.content_uploads_path + file.token);
@@ -153,7 +127,7 @@ namespace EchoReader.Entities
             }
 
             //Create a new file entry
-            file = new ArkUploadedFile
+            file = new ServerEchoUploadedFile
             {
                 name = name,
                 type = type,
@@ -173,56 +147,54 @@ namespace EchoReader.Entities
 
             //Save
             files.Add(file);
-            Save();
+            await UpdateSavedFiles();
 
             return file;
         }
 
         /// <summary>
-        /// Cleans old revisions from the database.
+        /// Saves the files uploaded here to the database
         /// </summary>
         /// <returns></returns>
-        public async Task CleanOldRevisions()
+        public async Task UpdateSavedFiles()
         {
-            {
-                var filterBuilder = Builders<DbDino>.Filter;
-                var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Lt("revision_id", revision_id);
-                await Program.conn.content_dinos.DeleteManyAsync(filter);
-            }
-            {
-                var filterBuilder = Builders<DbItem>.Filter;
-                var filter = filterBuilder.Eq("server_id", id) & filterBuilder.Lt("revision_id", revision_id);
-                await Program.conn.content_items.DeleteManyAsync(filter);
-            }
+            var filterBuilder = Builders<DbServer>.Filter;
+            var filter = filterBuilder.Eq("_id", ObjectId.Parse(id));
+            var updateBuilder = Builders<DbServer>.Update;
+            await Program.conn.system_servers.UpdateOneAsync(filter, updateBuilder.Set("echo_files", files));
         }
 
         /// <summary>
         /// Updates data
         /// </summary>
         /// <returns></returns>
-        public async Task ProcessData()
+        public async Task<PerformanceReport> ProcessData()
         {
+            //Make report
+            PerformanceReport report = new PerformanceReport();
+
             //First, confirm we have required files
+            report.StartStep("Opening required files.");
             Stream arkSave = await GetRequiredFileStream(ArkUploadedFileType.ArkSave, "game");
             Stream gameIni = await GetRequiredFileStream(ArkUploadedFileType.GameConfigINI, "Game.ini");
             Stream gameUserSettingsIni = await GetRequiredFileStream(ArkUploadedFileType.GameConfigINI, "GameUserSettings.ini");
 
             //Find existing player profiles for later
+            report.StartStep("Getting old files.");
             var oldProfiles = await GetPlayerProfilesAsync();
-
-            //Increase revision ID 
-            revision_id++;
 
             //Start streaming the .ark file
             ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer dotArkDs;
 
             //Create ProcessClassnameMeta for processing the .ark file
             dotArkDs = new ArkSaveEditor.Deserializer.DotArk.DotArkDeserializer();
+            report.StartStep("Creating sync sessions.");
             DeltaContentDbSyncSession<DbItem> itemSync = new DeltaContentDbSyncSession<DbItem>(Program.conn.content_items, id);
             JobSyncDinos syncDinos = new JobSyncDinos(this, dotArkDs, itemSync);
             JobSyncStructures syncStructures = new JobSyncStructures(this, dotArkDs);
 
             //Create
+            report.StartStep("Streaming file and making changes.");
             arkSave.Position = 0;
             dotArkDs.OpenArkFile(new IOMemoryStream(arkSave, true), (DotArkGameObject obj, object d) =>
             {
@@ -238,7 +210,7 @@ namespace EchoReader.Entities
                     //This is a dinosaur.
                     return syncDinos.RunOne;
                 }
-                if(ArkImports.GetStructureDisplayMetadataByClassname(classnameOriginal) != null)
+                if (ArkImports.GetStructureDisplayMetadataByClassname(classnameOriginal) != null)
                 {
                     //This is a structure
                     return syncStructures.RunOne;
@@ -249,11 +221,13 @@ namespace EchoReader.Entities
             }, null);
 
             //Finish sync requests
+            report.StartStep("Finishing sync sessions and saving data.");
             await syncDinos.End();
             await syncStructures.End();
             await itemSync.FinishSync();
 
             //Now, add embedded files
+            report.StartStep("Processing tribe and player profile files.");
             foreach (var f in files)
             {
                 if (f.type == ArkUploadedFileType.ArkTribe)
@@ -263,6 +237,7 @@ namespace EchoReader.Entities
             }
 
             //Read config files
+            report.StartStep("Processing config settings.");
             var configSettings = new DbServerGameSettings();
             configSettings.ReadFromStream(gameIni);
             configSettings.ReadFromStream(gameUserSettingsIni);
@@ -273,8 +248,8 @@ namespace EchoReader.Entities
                 mods = configSettings.ActiveMods.Split(',');
 
             //We'll now update the server in the database. Download it.
+            report.StartStep("Updating database settings.");
             DbServer ser = await Program.conn.GetServerByIdAsync(id);
-            ser.revision_id = revision_id;
             ser.latest_server_map = dotArkDs.binaryDataNames[0];
             ser.latest_server_map_name = ser.latest_server_map;
             ser.has_server_report = true;
@@ -283,10 +258,8 @@ namespace EchoReader.Entities
             ser.mods = mods;
             await ser.UpdateAsync();
 
-            //Save
-            Save();
-
-            //Close all 
+            //Close all
+            report.StartStep("Closing all.");
             arkSave.Close();
             gameIni.Close();
             gameUserSettingsIni.Close();
@@ -297,10 +270,12 @@ namespace EchoReader.Entities
             gameUserSettingsIni.Dispose();
 
             //Send events for joining/leaving
+            report.StartStep("Sending events to gateway.");
             await SendPlayerJoinEvents(oldProfiles);
 
-            //Clean up old revisions
-            await CleanOldRevisions();
+            //Finalize report (DO THIS LAST)
+            report.End();
+            return report;
         }
 
         private async Task<List<DbPlayerProfile>> GetPlayerProfilesAsync()

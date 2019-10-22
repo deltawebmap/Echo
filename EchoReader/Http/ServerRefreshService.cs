@@ -11,7 +11,8 @@ namespace EchoReader.Http
         public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, ArkServer server)
         {
             //Process
-            await server.ProcessData();
+            PerformanceReport report = await server.ProcessData();
+            await Program.QuickWriteJsonToDoc(e, report);
         }
     }
 }
