@@ -24,6 +24,9 @@ namespace EchoContent.Http.World
             //Get the dino
             DbDino dino = await GetDinosaur(dinoId, server, tribeId);
 
+            //Get dino prefs
+            var prefs = await dino.GetPrefs(Program.conn);
+
             //Get dinosaur entry
             ArkDinoEntry dinoEntry = ArkImports.GetDinoDataByClassname(dino.classname);
 
@@ -57,6 +60,7 @@ namespace EchoContent.Http.World
                 inventory_items = items,
                 item_class_data = itemData,
                 dino_entry = dinoEntry,
+                prefs = prefs,
                 max_stats = new DbArkDinosaurStats() //TODO!!!
             };
 
@@ -91,6 +95,7 @@ namespace EchoContent.Http.World
             public Dictionary<string, ArkItemEntry> item_class_data = new Dictionary<string, ArkItemEntry>();
             public DbArkDinosaurStats max_stats;
             public ArkDinoEntry dino_entry;
+            public LibDeltaSystem.Db.System.Entities.SavedDinoTribePrefs prefs;
         }
     }
 }

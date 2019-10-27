@@ -61,8 +61,8 @@ namespace EchoReader.ServerJobs
             }
 
             //First, check if an update is even needed.
-            if (!sync.CheckIfUpdateRequired(token, hash))
-                return;
+            /*if (!sync.CheckIfUpdateRequired(token, hash))
+                return;*/
 
             //Convert dino
             DbDino dino = ConvertDino(obj, reader);
@@ -173,6 +173,30 @@ namespace EchoReader.ServerJobs
                     else
                         db.imprint_quality = 0;
                 }
+
+                //Determine status
+                string status = "YOUR_TARGET";
+                if (reader.HasProperty("TamedAggressionLevel"))
+                {
+                    int agroLevel = reader.GetInt32Property("TamedAggressionLevel");
+                    switch(agroLevel)
+                    {
+                        case 0:
+                            status = "PASSIVE";
+                            break;
+                        case 1:
+                            status = "NEUTRAL";
+                            break;
+                        case 2:
+                            status = "AGGRESSIVE";
+                            break;
+                    }
+                    if(reader.GetBooleanProperty("bPassiveFlee"))
+                    {
+                        status = "PASSIVE_FLEE";
+                    }
+                }
+                db.status = status;
             }
 
             return db;

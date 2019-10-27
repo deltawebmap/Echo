@@ -29,7 +29,8 @@ namespace EchoContent.Http.World
                 endpoint_tribes_itemsearch = baseUrl + "/tribes/" + tribeId + "/items/?q={query}",
                 endpoint_tribes_overview = baseUrl + "/tribes/" + tribeId + "/overview",
                 endpoint_tribes_dino_stats = baseUrl + "/tribes/" + tribeId + "/dino_stats",
-                endpoint_tribes_log = baseUrl + "/tribes/" + tribeId + "/log?page=0&limit=200"
+                endpoint_tribes_log = baseUrl + "/tribes/" + tribeId + "/log?page=0&limit=200",
+                endpoint_put_dino_prefs = "https://deltamap.net/api/servers/" + server.id + "/put_dino_prefs/{dino}"
             };
 
             //Write
@@ -53,6 +54,7 @@ namespace EchoContent.Http.World
             public string endpoint_tribes_overview; //Tribe properties list
             public string endpoint_tribes_dino_stats; //Tribe dino stats
             public string endpoint_tribes_log; //Tribe log
+            public string endpoint_put_dino_prefs; //Puts dino prefs
         }
     }
 }

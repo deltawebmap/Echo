@@ -48,6 +48,9 @@ namespace EchoContent.Http.World
                 if (entry == null)
                     continue;
 
+                //Get prefs
+                var prefs = await p.GetPrefs(Program.conn);
+
                 //Convert
                 dinos.Add(new TribeOverviewDino
                 {
@@ -55,7 +58,9 @@ namespace EchoContent.Http.World
                     displayName = p.tamed_name,
                     id = p.dino_id.ToString(),
                     img = entry.icon.image_thumb_url,
-                    level = p.level
+                    level = p.level,
+                    status = p.status,
+                    color_tag = prefs.color_tag
                 });
             }
 
@@ -119,6 +124,8 @@ namespace EchoContent.Http.World
             public int level;
             public string id;
             public string img;
+            public string status;
+            public string color_tag;
         }
     }
 }

@@ -44,6 +44,9 @@ namespace EchoContent.Http.World
                 if (entry == null)
                     continue;
 
+                //Get prefs
+                var prefs = await dino.GetPrefs(Program.conn);
+
                 //Make dinosaur entry
                 ResponseDino d = new ResponseDino
                 {
@@ -55,7 +58,9 @@ namespace EchoContent.Http.World
                     tamedName = dino.tamed_name,
                     displayClassname = entry.screen_name,
                     level = dino.level,
-                    adjusted_map_pos = mapInfo.ConvertFromGamePositionToNormalized(new Vector2(dino.location.x, dino.location.y))
+                    adjusted_map_pos = mapInfo.ConvertFromGamePositionToNormalized(new Vector2(dino.location.x, dino.location.y)),
+                    status = dino.status,
+                    color_tag = prefs.color_tag
                 };
 
                 //Add
@@ -86,6 +91,8 @@ namespace EchoContent.Http.World
             public string tamedName;
             public string displayClassname;
             public int level;
+            public string status;
+            public string color_tag;
         }
 
         class ResponsePlayerCharacter

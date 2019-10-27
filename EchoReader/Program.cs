@@ -28,9 +28,9 @@ namespace EchoReader
         static void Main(string[] args)
         {
             //Open config
-            config = JsonConvert.DeserializeObject<EchoConfig>(File.ReadAllText(args[0]));
-            //config = new EchoConfig();
-            
+            config = new EchoConfig();
+            //config = JsonConvert.DeserializeObject<EchoConfig>(File.ReadAllText(args[0]));
+
             //Init everything
             rand = new Random();
             cache = new Dictionary<string, ArkServer>();
