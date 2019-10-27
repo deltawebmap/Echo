@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using LibDeltaSystem;
 
 namespace EchoContent.Http
 {
@@ -69,23 +70,26 @@ namespace EchoContent.Http
                     throw new StandardError("The map this server is using is not supported.", $"Map '{server.latest_server_map}' is not supported yet.");
                 var mapInfo = Program.ark_maps[server.latest_server_map];
 
+                //Get primal data package
+                DeltaPrimalDataPackage package = await Program.primal_data.LoadFullPackage(server.mods);
+
                 //Get next
                 if (next == "/create_session")
                     await World.CreateSessionRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
                 else if (next == "/tribes/"+tribeId+"/info")
-                    await World.TribeInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
+                    await World.TribeInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next == "/tribes/" + tribeId + "/overview")
-                    await World.TribeOverviewRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
+                    await World.TribeOverviewRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next == "/tribes/" + tribeId + "/items/")
-                    await World.ItemSearchRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
+                    await World.ItemSearchRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/dinos/"))
-                    await World.DinoInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
+                    await World.DinoInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/dino_stats"))
-                    await World.DinoListRequest.OnHttpRequest(e, server, user, tribeId);
+                    await World.DinoListRequest.OnHttpRequest(e, server, user, tribeId, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/log"))
                     await World.TribeLogRequest.OnHttpRequest(e, server, user, tribeId);
                 else if (next.StartsWith("/tribes/" + tribeId + "/thumbnail"))
-                    await World.ThumbnailRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
+                    await World.ThumbnailRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else
                     await Program.QuickWriteToDoc(e, "Server Endpoint Not Found", "text/plain", 404);
             } catch (StandardError ex)

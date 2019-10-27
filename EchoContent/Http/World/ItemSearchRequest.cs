@@ -11,6 +11,8 @@ using EchoContent.Exceptions;
 using ArkSaveEditor.ArkEntries;
 using System.Linq;
 using MongoDB.Bson;
+using LibDeltaSystem;
+using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 
 namespace EchoContent.Http.World
 {
@@ -18,7 +20,7 @@ namespace EchoContent.Http.World
     {
         public const int PAGE_SIZE = 25;
 
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all entries that could match
             string query = e.Request.Query["q"].ToString().ToLower();
@@ -28,7 +30,7 @@ namespace EchoContent.Http.World
             Dictionary<int, Dictionary<string, WebArkInventoryHolder>> inventories = new Dictionary<int, Dictionary<string, WebArkInventoryHolder>>();
             inventories.Add(0, new Dictionary<string, WebArkInventoryHolder>());
             int allTotalCount = 0;
-            foreach (var r in ArkImports.item_entries)
+            foreach (var r in package.item_entries)
             {
                 //Add to index
                 index++;
@@ -71,7 +73,7 @@ namespace EchoContent.Http.World
                         continue;
 
                     //Get the dino entry
-                    ArkDinoEntry entry = ArkImports.GetDinoDataByClassname(dino.classname);
+                    DinosaurEntry entry = package.GetDinoEntry(dino.classname);
                     if (entry == null)
                         continue;
 

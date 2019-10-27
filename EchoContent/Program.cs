@@ -19,6 +19,7 @@ namespace EchoContent
         public static DeltaConnection conn;
         public static EchoReaderConfig config;
         public static Dictionary<string, ArkSaveEditor.Entities.ArkMapData> ark_maps;
+        public static DeltaPrimalDataCache primal_data;
 
         public const string ROOT_URL = "https://echo-content.deltamap.net";
 
@@ -30,18 +31,11 @@ namespace EchoContent
             //Init everything
             rand = new Random();
 
-            //Load PrimalData. This is temporary
-            using (FileStream fs = new FileStream(config.pdp_file, System.IO.FileMode.Open, FileAccess.Read))
-            {
-                //Load package
-                bool ok = ArkSaveEditor.ArkImports.ImportContentFromPackage(fs, (ArkSaveEditor.Entities.PrimalDataPackageMetadata metadata) =>
-                {
-                    return true;
-                });
-            }
-
             //Load maps
             ark_maps = JsonConvert.DeserializeObject<Dictionary<string, ArkSaveEditor.Entities.ArkMapData>>(File.ReadAllText(config.map_config_file));
+
+            //Set up primal data
+            primal_data = new DeltaPrimalDataCache();
 
             //Connect to database
             conn = new DeltaConnection(config.database_config_file, "echo-content", 0, 0);

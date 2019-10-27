@@ -9,12 +9,13 @@ using MongoDB.Driver;
 using ArkSaveEditor;
 using EchoContent.Exceptions;
 using ArkSaveEditor.ArkEntries;
+using LibDeltaSystem;
 
 namespace EchoContent.Http.World
 {
     public static class TribeOverviewRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Get player profiles
             var playerProfiles = await GetPlayerProfiles(server, tribeId);
@@ -44,7 +45,7 @@ namespace EchoContent.Http.World
             foreach(var p in dinoProfiles)
             {
                 //Lookup dino entry for this
-                var entry = ArkImports.GetDinoDataByClassname(p.classname);
+                var entry = package.GetDinoEntry(p.classname);
                 if (entry == null)
                     continue;
 

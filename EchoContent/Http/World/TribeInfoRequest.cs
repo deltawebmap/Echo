@@ -7,17 +7,18 @@ using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 using ArkSaveEditor;
+using LibDeltaSystem;
 
 namespace EchoContent.Http.World
 {
     public static class TribeInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Create
             ResponseTribe tribe = new ResponseTribe
             {
-                dinos = await CreateDinos(server, tribeId, mapInfo),
+                dinos = await CreateDinos(server, tribeId, mapInfo, package),
                 gameTime = server.latest_server_time,
                 player_characters = new List<ResponsePlayerCharacter>(),
                 tribeId = tribeId
@@ -27,7 +28,7 @@ namespace EchoContent.Http.World
             await Program.QuickWriteJsonToDoc(e, tribe);
         }
 
-        private static async Task<List<ResponseDino>> CreateDinos(DbServer server, int tribeId, ArkMapData mapInfo)
+        private static async Task<List<ResponseDino>> CreateDinos(DbServer server, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
@@ -40,7 +41,7 @@ namespace EchoContent.Http.World
             foreach (var dino in responseList)
             {
                 //Try to find a dinosaur entry
-                var entry = ArkImports.GetDinoDataByClassname(dino.classname);
+                var entry = package.GetDinoEntry(dino.classname);
                 if (entry == null)
                     continue;
 

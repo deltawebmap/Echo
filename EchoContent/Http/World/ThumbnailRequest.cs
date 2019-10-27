@@ -7,12 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using LibDeltaSystem;
 
 namespace EchoContent.Http.World
 {
     public static class ThumbnailRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
@@ -39,7 +40,7 @@ namespace EchoContent.Http.World
                     continue;
                 
                 //Try to find a dinosaur entry
-                var entry = ArkImports.GetDinoDataByClassname(dino.classname);
+                var entry = package.GetDinoEntry(dino.classname);
                 if (entry == null)
                     continue;
 

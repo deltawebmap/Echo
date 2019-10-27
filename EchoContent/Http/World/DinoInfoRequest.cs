@@ -9,12 +9,14 @@ using MongoDB.Driver;
 using ArkSaveEditor;
 using EchoContent.Exceptions;
 using ArkSaveEditor.ArkEntries;
+using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
+using LibDeltaSystem;
 
 namespace EchoContent.Http.World
 {
     public static class DinoInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Get dino ID from URL
             string dinoIdString = e.Request.Path.ToString().Split('/')[5];
@@ -28,13 +30,13 @@ namespace EchoContent.Http.World
             var prefs = await dino.GetPrefs(Program.conn);
 
             //Get dinosaur entry
-            ArkDinoEntry dinoEntry = ArkImports.GetDinoDataByClassname(dino.classname);
+            DinosaurEntry dinoEntry = package.GetDinoEntry(dino.classname);
 
             //Find all inventory items
             List<DbItem> items = await GetItems(dino, server, tribeId);
 
             //Look up item classes
-            Dictionary<string, ArkItemEntry> itemData = new Dictionary<string, ArkItemEntry>();
+            Dictionary<string, ItemEntry> itemData = new Dictionary<string, ItemEntry>();
             foreach (var i in items)
             {
                 //Get classname to tes
@@ -45,7 +47,7 @@ namespace EchoContent.Http.World
                     continue;
 
                 //Search for it
-                ArkItemEntry entry = ArkImports.GetItemDataByClassname(classname);
+                ItemEntry entry = package.GetItemEntry(classname);
                 if (entry == null)
                     continue;
 
@@ -92,9 +94,9 @@ namespace EchoContent.Http.World
         {
             public DbDino dino;
             public List<DbItem> inventory_items;
-            public Dictionary<string, ArkItemEntry> item_class_data = new Dictionary<string, ArkItemEntry>();
+            public Dictionary<string, ItemEntry> item_class_data = new Dictionary<string, ItemEntry>();
             public DbArkDinosaurStats max_stats;
-            public ArkDinoEntry dino_entry;
+            public DinosaurEntry dino_entry;
             public LibDeltaSystem.Db.System.Entities.SavedDinoTribePrefs prefs;
         }
     }

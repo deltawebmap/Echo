@@ -6,12 +6,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using LibDeltaSystem;
+using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 
 namespace EchoContent.Http.World
 {
     public static class DinoListRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, DeltaPrimalDataPackage package)
         {
             //Get vars
             int limit = 30;
@@ -37,7 +39,7 @@ namespace EchoContent.Http.World
             var responseList = await response.ToListAsync();
 
             //Find dino entries
-            Dictionary<string, ArkDinoEntry> entries = new Dictionary<string, ArkDinoEntry>();
+            Dictionary<string, DinosaurEntry> entries = new Dictionary<string, DinosaurEntry>();
             foreach(var d in responseList)
             {
                 //If the classname was in the whitelist, skip
@@ -45,7 +47,7 @@ namespace EchoContent.Http.World
                     continue;
 
                 //Get
-                ArkDinoEntry entry = ArkSaveEditor.ArkImports.GetDinoDataByClassname(d.classname);
+                DinosaurEntry entry = package.GetDinoEntry(d.classname);
                 if (entry == null)
                     continue;
 
@@ -75,7 +77,7 @@ namespace EchoContent.Http.World
             public int limit;
             public int page;
             public List<DbDino> dinos;
-            public Dictionary<string, ArkDinoEntry> dino_entries;
+            public Dictionary<string, DinosaurEntry> dino_entries;
             public List<string> registered_classnames;
         }
     }
