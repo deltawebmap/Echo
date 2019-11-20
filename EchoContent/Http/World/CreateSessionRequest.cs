@@ -28,9 +28,12 @@ namespace EchoContent.Http.World
                 endpoint_tribes_dino = baseUrl + "/tribes/" + tribeId + "/dinos/{dino}",
                 endpoint_tribes_itemsearch = baseUrl + "/tribes/" + tribeId + "/items/?q={query}",
                 endpoint_tribes_overview = baseUrl + "/tribes/" + tribeId + "/overview",
-                endpoint_tribes_dino_stats = baseUrl + "/tribes/" + tribeId + "/dino_stats",
+                endpoint_tribes_dino_stats = baseUrl + "/tribes/" + tribeId + "/dino_stats?limit=30",
                 endpoint_tribes_log = baseUrl + "/tribes/" + tribeId + "/log?page=0&limit=200",
-                endpoint_put_dino_prefs = "https://deltamap.net/api/servers/" + server.id + "/put_dino_prefs/{dino}"
+                endpoint_put_dino_prefs = "https://deltamap.net/api/servers/" + server.id + "/put_dino_prefs/{dino}",
+                endpoint_canvases = "https://deltamap.net/api/servers/" + server.id + "/canvas",
+                endpoint_tribes_structures = baseUrl + "/tribes/" + tribeId + "/structures/all",
+                endpoint_tribes_structures_metadata = baseUrl + "/tribes/" + tribeId + "/structures/metadata.json"
             };
 
             //Write
@@ -55,6 +58,9 @@ namespace EchoContent.Http.World
             public string endpoint_tribes_dino_stats; //Tribe dino stats
             public string endpoint_tribes_log; //Tribe log
             public string endpoint_put_dino_prefs; //Puts dino prefs
+            public string endpoint_canvases; //Gets canvas list
+            public string endpoint_tribes_structures; //Structures
+            public string endpoint_tribes_structures_metadata; //Structure metadata
         }
     }
 }

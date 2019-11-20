@@ -251,8 +251,6 @@ namespace EchoReader.Entities
             report.StartStep("Updating database settings.");
             DbServer ser = await Program.conn.GetServerByIdAsync(id);
             ser.latest_server_map = dotArkDs.binaryDataNames[0];
-            ser.latest_server_map_name = ser.latest_server_map;
-            ser.has_server_report = true;
             ser.latest_server_time = dotArkDs.ark.gameTime;
             ser.game_settings = configSettings;
             ser.mods = mods;

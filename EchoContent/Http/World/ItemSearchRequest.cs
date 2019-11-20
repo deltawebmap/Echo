@@ -68,7 +68,7 @@ namespace EchoContent.Http.World
                     }
                     
                     //Get dino
-                    DbDino dino = await GetDinosaurByToken(i.parent_id, server);
+                    DbDino dino = await GetDinosaurByID(ulong.Parse(i.parent_id), server);
                     if (dino == null)
                         continue;
 
@@ -137,10 +137,10 @@ namespace EchoContent.Http.World
             return dino;
         }
 
-        private static async Task<DbDino> GetDinosaurByToken(string token, DbServer server)
+        private static async Task<DbDino> GetDinosaurByID(ulong token, DbServer server)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("token", token);
+            var filter = filterBuilder.Eq("dino_id", token);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)

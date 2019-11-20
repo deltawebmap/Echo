@@ -63,7 +63,8 @@ namespace EchoContent.Http.World
                 item_class_data = itemData,
                 dino_entry = dinoEntry,
                 prefs = prefs,
-                max_stats = new DbArkDinosaurStats() //TODO!!!
+                max_stats = dino.max_stats,
+                dino_id = dino.dino_id.ToString()
             };
 
             //Write
@@ -84,7 +85,7 @@ namespace EchoContent.Http.World
         private static async Task<List<DbItem>> GetItems(DbDino dino, DbServer server, int tribeId)
         {
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("parent_id", dino.token) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
+            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("parent_id", dino.dino_id) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
             var response = await server.conn.content_items.FindAsync(filter);
             var items = await response.ToListAsync();
             return items;
@@ -98,6 +99,7 @@ namespace EchoContent.Http.World
             public DbArkDinosaurStats max_stats;
             public DinosaurEntry dino_entry;
             public LibDeltaSystem.Db.System.Entities.SavedDinoTribePrefs prefs;
+            public string dino_id;
         }
     }
 }

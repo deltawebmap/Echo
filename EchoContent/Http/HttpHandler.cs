@@ -76,7 +76,7 @@ namespace EchoContent.Http
                 //Get next
                 if (next == "/create_session")
                     await World.CreateSessionRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
-                else if (next == "/tribes/"+tribeId+"/info")
+                else if (next == "/tribes/" + tribeId + "/info")
                     await World.TribeInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next == "/tribes/" + tribeId + "/overview")
                     await World.TribeOverviewRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
@@ -90,6 +90,10 @@ namespace EchoContent.Http
                     await World.TribeLogRequest.OnHttpRequest(e, server, user, tribeId);
                 else if (next.StartsWith("/tribes/" + tribeId + "/thumbnail"))
                     await World.ThumbnailRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
+                else if (next.StartsWith("/tribes/" + tribeId + "/structures/all"))
+                    await World.TribeStructuresRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
+                else if (next.StartsWith("/tribes/" + tribeId + "/structures/metadata.json"))
+                    await World.TribeStructuresRequest.OnMetadataHttpRequest(e);
                 else
                     await Program.QuickWriteToDoc(e, "Server Endpoint Not Found", "text/plain", 404);
             } catch (StandardError ex)
