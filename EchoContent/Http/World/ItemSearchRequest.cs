@@ -28,7 +28,12 @@ namespace EchoContent.Http.World
             int found = 0;
             List<WebArkInventoryItemResult> itemsResponse = new List<WebArkInventoryItemResult>();
             Dictionary<int, Dictionary<string, WebArkInventoryHolder>> inventories = new Dictionary<int, Dictionary<string, WebArkInventoryHolder>>();
+
+            //Add defaults
             inventories.Add(0, new Dictionary<string, WebArkInventoryHolder>());
+            inventories.Add(1, new Dictionary<string, WebArkInventoryHolder>());
+
+            //Add items
             int allTotalCount = 0;
             foreach (var r in package.item_entries)
             {
@@ -66,38 +71,34 @@ namespace EchoContent.Http.World
                         existingRefs[0].count += i.stack_size;
                         continue;
                     }
-                    
-                    //Get dino
-                    DbDino dino = await GetDinosaurByID(ulong.Parse(i.parent_id), server);
-                    if (dino == null)
-                        continue;
 
-                    //Get the dino entry
-                    DinosaurEntry entry = package.GetDinoEntry(dino.classname);
-                    if (entry == null)
-                        continue;
+                    //Get holder
+                    WebArkInventoryHolder holder = await GetInventoryHolder(server, tribeId, i, package);
 
-                    //Convert dino
-                    inventoryRefs.Add(new ArkItemSearchResultsInventory
+                    //Add holder to results
+                    if(holder != null)
                     {
-                        count = i.stack_size,
-                        id = i.parent_id,
-                        type = DbInventoryParentType.Dino
-                    });
-
-                    //Add dino data to inventory
-                    if (!inventories[(int)i.parent_type].ContainsKey(i.parent_id))
-                    {
-                        inventories[(int)i.parent_type].Add(i.parent_id, new WebArkInventoryDino
+                        //Add to inventory
+                        if (!inventories[(int)i.parent_type].ContainsKey(i.parent_id))
                         {
-                            displayClassName = entry.screen_name,
-                            displayName = dino.tamed_name,
-                            id = dino.dino_id.ToString(),
-                            img = entry.icon.image_thumb_url,
-                            level = dino.level
+                            inventories[(int)i.parent_type].Add(i.parent_id, holder);
+                        }
+
+                        //Add ref
+                        inventoryRefs.Add(new ArkItemSearchResultsInventory
+                        {
+                            count = i.stack_size,
+                            id = i.parent_id,
+                            type = i.parent_type
                         });
                     }
                 }
+
+                //Sort inventories
+                inventoryRefs.Sort(new Comparison<ArkItemSearchResultsInventory>((x, y) =>
+                {
+                    return y.count.CompareTo(x.count);
+                }));
 
                 //Add inventory result
                 itemsResponse.Add(new WebArkInventoryItemResult
@@ -126,21 +127,82 @@ namespace EchoContent.Http.World
             await Program.QuickWriteJsonToDoc(e, output);
         }
 
+        private static async Task<WebArkInventoryHolder> GetInventoryHolder(DbServer server, int tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        {
+            switch(i.parent_type)
+            {
+                case DbInventoryParentType.Dino:
+                    return await GetDinoInventoryHolder(server, tribe_id, i, package);
+                case DbInventoryParentType.Structure:
+                    return await GetStructureInventoryHolder(server, tribe_id, i, package);
+                default:
+                    return null;
+            }
+        }
+
+        private static async Task<WebArkInventoryDino> GetDinoInventoryHolder(DbServer server, int tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        {
+            //Get dino
+            DbDino dino = await DbDino.GetDinosaurByID(Program.conn, ulong.Parse(i.parent_id), server);
+            if (dino == null)
+                return null;
+
+            //Get the dino entry
+            DinosaurEntry entry = package.GetDinoEntry(dino.classname);
+            if (entry == null)
+                return null;
+
+            //Add dino data to inventory
+            return new WebArkInventoryDino
+            {
+                displayClassName = entry.screen_name,
+                displayName = dino.tamed_name,
+                id = dino.dino_id.ToString(),
+                img = entry.icon.image_thumb_url,
+                level = dino.level
+            };
+        }
+
+        private static async Task<WebArkInventoryStructure> GetStructureInventoryHolder(DbServer server, int tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        {
+            //Get structure
+            DbStructure structure = await DbStructure.GetStructureByID(Program.conn, int.Parse(i.parent_id), server);
+            if (structure == null)
+                return null;
+
+            //Attempt to get info about this structure
+            string name = structure.classname;
+            string subname = structure.classname;
+            string icon = ""; //TODO
+            if(structure.TryGetItemEntry(Program.conn, package, out ItemEntry entry))
+            {
+                name = entry.name;
+                icon = entry.icon.image_thumb_url;
+            }
+
+            //Switch the names if there is a custom name applied
+            if(structure.custom_name != null)
+            {
+                subname = name;
+                name = structure.custom_name;
+            }
+
+            //Add dino data to inventory
+            return new WebArkInventoryStructure
+            {
+                displayClassName = subname,
+                displayName = name,
+                id = structure.structure_id.ToString(),
+                img = icon,
+                item_count = structure.max_item_count,
+                location = structure.location
+            };
+        }
+
         private static async Task<DbDino> GetDinosaur(string id, DbServer server)
         {
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("_id", ObjectId.Parse(id));
-            var response = await server.conn.content_dinos.FindAsync(filter);
-            var dino = await response.FirstOrDefaultAsync();
-            if (dino == null)
-                throw new StandardError("Dinosaur not found.", "This dinosaur ID is invalid.", 404);
-            return dino;
-        }
-
-        private static async Task<DbDino> GetDinosaurByID(ulong token, DbServer server)
-        {
-            var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("dino_id", token);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)
@@ -187,18 +249,24 @@ namespace EchoContent.Http.World
             public string id;
         }
 
-        public abstract class WebArkInventoryHolder
+        public class WebArkInventoryHolder
         {
             //Represents a holder of a inventory
-        }
-
-        public class WebArkInventoryDino : WebArkInventoryHolder
-        {
             public string id;
             public string displayName;
             public string displayClassName;
             public string img;
+        }
+
+        public class WebArkInventoryDino : WebArkInventoryHolder
+        {
             public int level;
+        }
+
+        public class WebArkInventoryStructure : WebArkInventoryHolder
+        {
+            public int item_count;
+            public DbLocation location;
         }
     }
 }

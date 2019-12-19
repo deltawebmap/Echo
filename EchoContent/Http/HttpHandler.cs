@@ -76,12 +76,14 @@ namespace EchoContent.Http
                 //Get next
                 if (next == "/create_session")
                     await World.CreateSessionRequest.OnHttpRequest(e, server, user, tribeId, mapInfo);
-                else if (next == "/tribes/" + tribeId + "/info")
+                else if (next == "/tribes/" + tribeId + "/icons")
                     await World.TribeInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next == "/tribes/" + tribeId + "/overview")
                     await World.TribeOverviewRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next == "/tribes/" + tribeId + "/items/")
                     await World.ItemSearchRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
+                else if (next == "/tribes/" + tribeId + "/younglings")
+                    await World.DinoYounglingsRequest.OnHttpRequest(e, server, user, tribeId, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/dinos/"))
                     await World.DinoInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/dino_stats"))

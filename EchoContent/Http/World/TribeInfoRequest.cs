@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using MongoDB.Driver;
 using ArkSaveEditor;
 using LibDeltaSystem;
+using LibDeltaSystem.Db.System.Entities;
 
 namespace EchoContent.Http.World
 {
@@ -18,17 +19,28 @@ namespace EchoContent.Http.World
             //Create
             ResponseTribe tribe = new ResponseTribe
             {
-                dinos = await CreateDinos(server, tribeId, mapInfo, package),
+                icons = new List<MapIcon>(),
                 gameTime = server.latest_server_time,
-                player_characters = new List<ResponsePlayerCharacter>(),
                 tribeId = tribeId
             };
+
+            //Add all types
+            tribe.icons.AddRange(await CreateDinos(server, tribeId, mapInfo, package));
 
             //Write
             await Program.QuickWriteJsonToDoc(e, tribe);
         }
 
-        private static async Task<List<ResponseDino>> CreateDinos(DbServer server, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        private static Dictionary<string, string> DINO_STATUS_COLOR_MAP = new Dictionary<string, string>
+        {
+            {"PASSIVE","#5AE000" },
+            {"NEUTRAL","#000000" },
+            {"AGGRESSIVE","#E63F19" },
+            {"PASSIVE_FLEE","#E6D51C" },
+            {"YOUR_TARGET","#1C9BE6" },
+        };
+
+        private static async Task<List<MapIcon>> CreateDinos(DbServer server, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
@@ -37,7 +49,7 @@ namespace EchoContent.Http.World
             var responseList = await response.ToListAsync();
 
             //Convert all dinosaurs
-            List<ResponseDino> dinos = new List<ResponseDino>();
+            List<MapIcon> dinos = new List<MapIcon>();
             foreach (var dino in responseList)
             {
                 //Try to find a dinosaur entry
@@ -48,24 +60,26 @@ namespace EchoContent.Http.World
                 //Get prefs
                 var prefs = await dino.GetPrefs(Program.conn);
 
-                //Make dinosaur entry
-                ResponseDino d = new ResponseDino
-                {
-                    coord_pos = WorldTools.ConvertFromWorldToGameCoords(dino.location, mapInfo),
-                    classname = dino.classname,
-                    imgUrl = entry.icon.image_thumb_url,
-                    id = dino.dino_id.ToString(),
-                    apiUrl = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeId + "/dinos/" + dino.dino_id.ToString(),
-                    tamedName = dino.tamed_name,
-                    displayClassname = entry.screen_name,
-                    level = dino.level,
-                    adjusted_map_pos = mapInfo.ConvertFromGamePositionToNormalized(new Vector2(dino.location.x, dino.location.y)),
-                    status = dino.status,
-                    color_tag = prefs.color_tag
-                };
-
                 //Add
-                dinos.Add(d);
+                dinos.Add(new MapIcon
+                {
+                    location = dino.location,
+                    img = entry.icon.image_thumb_url,
+                    type = "dinos",
+                    id = dino.dino_id.ToString(),
+                    outline_color = DINO_STATUS_COLOR_MAP[dino.status],
+                    tag_color = prefs.color_tag,
+                    dialog = new MapIconHoverDialog
+                    {
+                        title = dino.tamed_name,
+                        subtitle = entry.screen_name + " - Lvl " + dino.level
+                    },
+                    extras = new MapIconExtra_Dino
+                    {
+                        prefs = prefs,
+                        url = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeId + "/dinos/" + dino.dino_id.ToString()
+                    }
+                });
             }
 
             return dinos;
@@ -74,36 +88,63 @@ namespace EchoContent.Http.World
         class ResponseTribe
         {
             public float gameTime;
-            public List<ResponseDino> dinos;
+            public List<MapIcon> icons;
             public int tribeId;
-
-            public List<ResponsePlayerCharacter> player_characters;
         }
 
-        class ResponseDino
+        class MapIcon
         {
-            public Vector2 coord_pos;
-            public Vector2 adjusted_map_pos; //Position for the web map
+            /// <summary>
+            /// Location in game units
+            /// </summary>
+            public DbLocation location;
 
-            public string classname;
-            public string imgUrl;
-            public string apiUrl;
+            /// <summary>
+            /// Icon image
+            /// </summary>
+            public string img;
+
+            /// <summary>
+            /// The type of object
+            /// </summary>
+            public string type;
+
+            /// <summary>
+            /// Unqiue (to this type) ID used to map this object
+            /// </summary>
             public string id;
-            public string tamedName;
-            public string displayClassname;
-            public int level;
-            public string status;
-            public string color_tag;
+
+            /// <summary>
+            /// Outline color. Can be null
+            /// </summary>
+            public string outline_color;
+
+            /// <summary>
+            /// Color tag. Won't appear if null.
+            /// </summary>
+            public string tag_color;
+
+            /// <summary>
+            /// Hover dialog. Won't appear if this is null
+            /// </summary>
+            public MapIconHoverDialog dialog;
+
+            /// <summary>
+            /// Additional information to include
+            /// </summary>
+            public object extras;
         }
 
-        class ResponsePlayerCharacter
+        class MapIconHoverDialog
         {
-            public Vector2 coord_pos;
-            public Vector2 adjusted_map_pos; //Position for the web map
+            public string title;
+            public string subtitle;
+        }
 
-            /*public ArkPlayerProfile profile;
-            public SteamProfile steamProfile; //This will be set outside of our constructor*/
-            public bool is_alive;
+        class MapIconExtra_Dino
+        {
+            public string url;
+            public SavedDinoTribePrefs prefs;
         }
     }
 }

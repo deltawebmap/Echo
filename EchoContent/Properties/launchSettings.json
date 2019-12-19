@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EchoContent": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Roman\\Documents\\delta_dev\\backend\\echo_read\\echo_config.json"
+    }
+  }
+}
