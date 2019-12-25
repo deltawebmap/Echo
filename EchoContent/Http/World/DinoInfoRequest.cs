@@ -11,6 +11,7 @@ using EchoContent.Exceptions;
 using ArkSaveEditor.ArkEntries;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem;
+using EchoContent.Entities.Inventory;
 
 namespace EchoContent.Http.World
 {
@@ -34,36 +35,15 @@ namespace EchoContent.Http.World
 
             //Find all inventory items
             List<DbItem> items = await GetItems(dino, server, tribeId);
-
-            //Look up item classes
-            Dictionary<string, ItemEntry> itemData = new Dictionary<string, ItemEntry>();
-            foreach (var i in items)
-            {
-                //Get classname to tes
-                string classname = i.classname;
-
-                //Check if we already have item data for this
-                if (itemData.ContainsKey(classname))
-                    continue;
-
-                //Search for it
-                ItemEntry entry = package.GetItemEntry(classname);
-                if (entry == null)
-                    continue;
-
-                //Add it
-                itemData.Add(classname, entry);
-            }
+            WebInventory inventory = await Tools.InventoryTool.GetWebInventory(items, package, server, tribeId);
 
             //Respond with dinosaur data
             ResponseDino response = new ResponseDino
             {
                 dino = dino,
-                inventory_items = items,
-                item_class_data = itemData,
+                inventory = inventory,
                 dino_entry = dinoEntry,
                 prefs = prefs,
-                max_stats = dino.max_stats,
                 dino_id = dino.dino_id.ToString()
             };
 
@@ -94,8 +74,7 @@ namespace EchoContent.Http.World
         class ResponseDino
         {
             public DbDino dino;
-            public List<DbItem> inventory_items;
-            public Dictionary<string, ItemEntry> item_class_data = new Dictionary<string, ItemEntry>();
+            public WebInventory inventory;
             public DbArkDinosaurStats max_stats;
             public DinosaurEntry dino_entry;
             public LibDeltaSystem.Db.System.Entities.SavedDinoTribePrefs prefs;

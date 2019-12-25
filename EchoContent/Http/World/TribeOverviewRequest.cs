@@ -52,6 +52,10 @@ namespace EchoContent.Http.World
                 //Get prefs
                 var prefs = await p.GetPrefs(Program.conn);
 
+                //test
+                if (p.is_cryo)
+                    p.status = "C";
+
                 //Convert
                 dinos.Add(new TribeOverviewDino
                 {

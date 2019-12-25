@@ -29,6 +29,8 @@ namespace EchoContent.Http.World
             //Sort
             structures.Sort(new Comparison<DbStructure>((x, y) =>
             {
+                if (x.has_inventory || y.has_inventory)
+                    return x.has_inventory.CompareTo(y.has_inventory);
                 return x.location.z.CompareTo(y.location.z);
             }));
 
@@ -47,6 +49,11 @@ namespace EchoContent.Http.World
                     response.i.Add(img);
                 }
 
+                //Get the ID. It's set only if this has an inventory
+                int? sid = null;
+                if (t.has_inventory)
+                    sid = t.structure_id;
+
                 //Add to responses
                 response.s.Add(new ResponseStructure
                 {
@@ -54,7 +61,8 @@ namespace EchoContent.Http.World
                     r = t.location.yaw,
                     s = metadata.size,
                     x = t.location.x,
-                    y = t.location.y
+                    y = t.location.y,
+                    id = sid
                 });
             }
 
@@ -92,6 +100,7 @@ namespace EchoContent.Http.World
             public float x; //X pos
             public float y; //Y pos
             public float s; //Size
+            public int? id; //ID of this structure, ONLY if it has an inventory!
         }
     }
 }

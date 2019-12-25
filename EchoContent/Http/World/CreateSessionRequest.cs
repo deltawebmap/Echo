@@ -26,7 +26,8 @@ namespace EchoContent.Http.World
                 mapBackgroundColor = mapInfo.backgroundColor,
                 href = baseUrl + "/create_session",
                 endpoint_tribes_icons = baseUrl + "/tribes/" + tribeId + "/icons",
-                endpoint_tribes_dino = baseUrl + "/tribes/" + tribeId + "/dinos/{dino}",
+                endpoint_tribes_dino = baseUrl + "/tribes/" + tribeId + "/dino/{dino}",
+                endpoint_tribes_structure = baseUrl + "/tribes/" + tribeId + "/structure/{structure}",
                 endpoint_tribes_itemsearch = baseUrl + "/tribes/" + tribeId + "/items/?q={query}",
                 endpoint_tribes_overview = baseUrl + "/tribes/" + tribeId + "/overview",
                 endpoint_tribes_dino_stats = baseUrl + "/tribes/" + tribeId + "/dino_stats?limit=30",
@@ -58,6 +59,7 @@ namespace EchoContent.Http.World
             public string endpoint_tribes_icons; //Endpoint for viewing tribes
             public string endpoint_tribes_itemsearch; //Item search endpoint
             public string endpoint_tribes_dino; //Dino endpoint
+            public string endpoint_tribes_structure; //Structure endpoint
             public string endpoint_tribes_overview; //Tribe properties list
             public string endpoint_tribes_dino_stats; //Tribe dino stats
             public string endpoint_tribes_log; //Tribe log

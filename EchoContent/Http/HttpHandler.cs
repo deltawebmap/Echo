@@ -84,8 +84,10 @@ namespace EchoContent.Http
                     await World.ItemSearchRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next == "/tribes/" + tribeId + "/younglings")
                     await World.DinoYounglingsRequest.OnHttpRequest(e, server, user, tribeId, package);
-                else if (next.StartsWith("/tribes/" + tribeId + "/dinos/"))
+                else if (next.StartsWith("/tribes/" + tribeId + "/dino/"))
                     await World.DinoInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
+                else if (next.StartsWith("/tribes/" + tribeId + "/structure/"))
+                    await World.StructureInfoRequest.OnHttpRequest(e, server, user, tribeId, mapInfo, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/dino_stats"))
                     await World.DinoListRequest.OnHttpRequest(e, server, user, tribeId, package);
                 else if (next.StartsWith("/tribes/" + tribeId + "/log"))

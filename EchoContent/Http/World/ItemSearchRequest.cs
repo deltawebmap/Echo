@@ -181,7 +181,10 @@ namespace EchoContent.Http.World
             }
 
             //Switch the names if there is a custom name applied
-            if(structure.custom_name != null)
+            bool useCustomName = structure.custom_name != null;
+            if (useCustomName)
+                useCustomName = structure.custom_name.Length > 0;
+            if (useCustomName)
             {
                 subname = name;
                 name = structure.custom_name;
