@@ -1,8 +1,8 @@
-﻿using ArkSaveEditor.Entities;
-using LibDeltaSystem;
+﻿using LibDeltaSystem;
 using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.System.Entities;
+using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Entities.DynamicTiles;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace EchoContent.Http.World
 {
     public static class TribeStructuresRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find structures
             List<DbStructure> structures = await Program.conn.GetTribeStructures(server.id, tribeId);

@@ -1,23 +1,21 @@
-﻿using ArkSaveEditor.Entities;
-using LibDeltaSystem.Db.System;
+﻿using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.Content;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
-using ArkSaveEditor;
 using EchoContent.Exceptions;
-using ArkSaveEditor.ArkEntries;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem;
 using EchoContent.Entities.Inventory;
+using LibDeltaSystem.Entities.ArkEntries;
 
 namespace EchoContent.Http.World
 {
     public static class DinoInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Get dino ID from URL
             string dinoIdString = e.Request.Path.ToString().Split('/')[5];
@@ -31,7 +29,7 @@ namespace EchoContent.Http.World
             var prefs = await dino.GetPrefs(Program.conn);
 
             //Get dinosaur entry
-            DinosaurEntry dinoEntry = package.GetDinoEntry(dino.classname);
+            DinosaurEntry dinoEntry = await package.GetDinoEntryByClssnameAsnyc(dino.classname);
 
             //Find all inventory items
             List<DbItem> items = await GetItems(dino, server, tribeId);

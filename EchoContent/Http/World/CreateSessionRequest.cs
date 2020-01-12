@@ -1,6 +1,6 @@
-﻿using ArkSaveEditor.Entities;
-using EchoContent.Exceptions;
+﻿using EchoContent.Exceptions;
 using LibDeltaSystem.Db.System;
+using LibDeltaSystem.Entities.ArkEntries;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,7 +10,7 @@ namespace EchoContent.Http.World
 {
     public static class CreateSessionRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo)
         {
             //Get base url
             string baseUrl = Program.ROOT_URL + "/" + server.id;
@@ -50,7 +50,7 @@ namespace EchoContent.Http.World
             public DateTime systemTime; //Time on this server that we should use instead of the user's system time
 
             public string mapName;
-            public ArkMapData mapData;
+            public ArkMapEntry mapData;
             public string mapBackgroundColor;
             public ArkMapDisplayData[] maps; //Displable maps
 

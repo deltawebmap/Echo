@@ -1,21 +1,19 @@
-﻿using ArkSaveEditor.Entities;
-using LibDeltaSystem.Db.System;
+﻿using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.Content;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
-using ArkSaveEditor;
 using EchoContent.Exceptions;
-using ArkSaveEditor.ArkEntries;
 using LibDeltaSystem;
+using LibDeltaSystem.Entities.ArkEntries;
 
 namespace EchoContent.Http.World
 {
     public static class TribeOverviewRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Get player profiles
             var playerProfiles = await GetPlayerProfiles(server, tribeId);

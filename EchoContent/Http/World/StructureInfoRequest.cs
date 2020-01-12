@@ -1,9 +1,9 @@
-﻿using ArkSaveEditor.Entities;
-using EchoContent.Entities.Inventory;
+﻿using EchoContent.Entities.Inventory;
 using EchoContent.Exceptions;
 using LibDeltaSystem;
 using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
+using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace EchoContent.Http.World
 {
     public static class StructureInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Get dino ID from URL
             string structureIdString = e.Request.Path.ToString().Split('/')[5];

@@ -64,14 +64,14 @@ namespace EchoContent.Http
 
                 //Get next URL
                 string next = e.Request.Path.ToString().Substring(serverId.Length + 1);
-            
+
                 //Get this map from the maps
-                if (!Program.ark_maps.ContainsKey(server.latest_server_map))
+                var mapInfo = await server.GetMapEntryAsync(Program.conn);
+                if (mapInfo == null)
                     throw new StandardError("The map this server is using is not supported.", $"Map '{server.latest_server_map}' is not supported yet.");
-                var mapInfo = Program.ark_maps[server.latest_server_map];
 
                 //Get primal data package
-                DeltaPrimalDataPackage package = await Program.primal_data.LoadFullPackage(server.mods);
+                DeltaPrimalDataPackage package = await Program.conn.GetPrimalDataPackage(new string[0]);
 
                 //Get next
                 if (next == "/create_session")

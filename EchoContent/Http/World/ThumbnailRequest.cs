@@ -1,6 +1,4 @@
-﻿using ArkSaveEditor;
-using ArkSaveEditor.Entities;
-using LibDeltaSystem.Db.Content;
+﻿using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using MongoDB.Driver;
 using System;
@@ -8,12 +6,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using LibDeltaSystem;
+using LibDeltaSystem.Entities.ArkEntries;
+using LibDeltaSystem.Entities;
 
 namespace EchoContent.Http.World
 {
     public static class ThumbnailRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;

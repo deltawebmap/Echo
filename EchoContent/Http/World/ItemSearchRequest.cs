@@ -1,18 +1,17 @@
-﻿using ArkSaveEditor.Entities;
-using LibDeltaSystem.Db.System;
+﻿using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.Content;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
-using ArkSaveEditor;
 using EchoContent.Exceptions;
-using ArkSaveEditor.ArkEntries;
 using System.Linq;
 using MongoDB.Bson;
 using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
+using LibDeltaSystem.Entities.ArkEntries;
+using System.Text.RegularExpressions;
 
 namespace EchoContent.Http.World
 {
@@ -20,96 +19,104 @@ namespace EchoContent.Http.World
     {
         public const int PAGE_SIZE = 25;
 
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all entries that could match
             string query = e.Request.Query["q"].ToString().ToLower();
             int index = -1;
             int found = 0;
-            List<WebArkInventoryItemResult> itemsResponse = new List<WebArkInventoryItemResult>();
-            Dictionary<int, Dictionary<string, WebArkInventoryHolder>> inventories = new Dictionary<int, Dictionary<string, WebArkInventoryHolder>>();
+            List<WebArkInventoryItemResult> itemsResponse = new List<WebArkInventoryItemResult>(); //Defines an item on the list. These should be unique
+            Dictionary<int, Dictionary<string, WebArkInventoryHolder>> inventories = new Dictionary<int, Dictionary<string, WebArkInventoryHolder>>(); //Defines the actual object an item stack is located in
+            List<string> foundClassnames = new List<string>(); //List of classnames we've processed
 
             //Add defaults
             inventories.Add(0, new Dictionary<string, WebArkInventoryHolder>());
             inventories.Add(1, new Dictionary<string, WebArkInventoryHolder>());
 
-            //Add items
-            int allTotalCount = 0;
-            foreach (var r in package.item_entries)
+            //Now, find all inventories owning these
+            var results = await GetItemsStreamed(server, tribeId, query);
+            bool finished = false;
+            int calls = 0;
+            while(await results.MoveNextAsync() && !finished)
             {
-                //Add to index
-                index++;
-                
-                //Check if this matches
-                if (!r.name.ToLower().Contains(query) && query.Length != 0)
-                    continue;
-
-                //Check if we're beyond page size
-                if (found > PAGE_SIZE)
-                    break;
-
-                //Get items for this
-                List<DbItem> items = await GetItems(server, tribeId, r.classname);
-
-                //Stop if there were no items found
-                if (items.Count == 0)
-                    continue;
-                found++;
-
-                //Now, find all inventories owning this
-                List<ArkItemSearchResultsInventory> inventoryRefs = new List<ArkItemSearchResultsInventory>();
-                int totalCount = 0;
-                foreach(var i in items)
+                calls++;
+                foreach (var i in results.Current)
                 {
-                    //Add to total
-                    totalCount += i.stack_size;
-                    
-                    //Check if we already have data for this. If we do, just add to the count
-                    var existingRefs = inventoryRefs.Where(x => x.id == i.parent_id && x.type == i.parent_type).ToArray();
-                    if(existingRefs.Length == 1)
+                    //Check if this is over the page limit
+                    if(!foundClassnames.Contains(i.classname))
                     {
+                        //Check if we're over the page limit
+                        if(foundClassnames.Count >= PAGE_SIZE)
+                        {
+                            finished = true;
+                            break;
+                        }
+
+                        //Add to found
+                        foundClassnames.Add(i.classname);
+                    }
+                    
+                    //Find or create an item result for this
+                    var itemStack = itemsResponse.Where(x => x.item_classname == i.classname).FirstOrDefault();
+                    if (itemStack == null)
+                    {
+                        //Get item entry
+                        ItemEntry r = await package.GetItemEntryByClssnameAsnyc(i.classname);
+                        if (r == null)
+                            continue;
+
+                        //Create item data
+                        itemStack = new WebArkInventoryItemResult
+                        {
+                            item_classname = r.classname,
+                            item_displayname = r.name,
+                            item_icon = r.icon.image_url,
+                            owner_inventories = new List<ArkItemSearchResultsInventory>(),
+                            total_count = 0
+                        };
+                        itemsResponse.Add(itemStack);
+                    }
+                    List<ArkItemSearchResultsInventory> inventoryRefs = itemStack.owner_inventories; //Defines where an item stack is located, maps to an inventory ID
+
+                    //Check if we already have an inventory reference to this parent
+                    var existingRefs = inventoryRefs.Where(x => x.id == i.parent_id && x.type == i.parent_type).ToArray();
+                    if (existingRefs.Length == 1)
+                    {
+                        //We'll add to the stack size here
                         existingRefs[0].count += i.stack_size;
+                        itemStack.total_count += i.stack_size;
                         continue;
                     }
 
-                    //Get holder
-                    WebArkInventoryHolder holder = await GetInventoryHolder(server, tribeId, i, package);
-
-                    //Add holder to results
-                    if(holder != null)
+                    //Add the inventory holder data
+                    if (!inventories[(int)i.parent_type].ContainsKey(i.parent_id))
                     {
-                        //Add to inventory
-                        if (!inventories[(int)i.parent_type].ContainsKey(i.parent_id))
-                        {
-                            inventories[(int)i.parent_type].Add(i.parent_id, holder);
-                        }
-
-                        //Add ref
-                        inventoryRefs.Add(new ArkItemSearchResultsInventory
-                        {
-                            count = i.stack_size,
-                            id = i.parent_id,
-                            type = i.parent_type
-                        });
+                        //Now, we know we don't have an inventory registered yet for this holder
+                        //Get the data of the holder we're about to register
+                        WebArkInventoryHolder holder = await GetInventoryHolder(server, tribeId, i, package);
+                        inventories[(int)i.parent_type].Add(i.parent_id, holder);
                     }
-                }
 
-                //Sort inventories
-                inventoryRefs.Sort(new Comparison<ArkItemSearchResultsInventory>((x, y) =>
+                    //Add the reference data for this object
+                    inventoryRefs.Add(new ArkItemSearchResultsInventory
+                    {
+                        count = i.stack_size,
+                        id = i.parent_id,
+                        type = i.parent_type
+                    });
+
+                    //Add to count
+                    itemStack.total_count += i.stack_size;
+                }
+            }
+
+            //Now that all items have been found, loop through them and sort their inventory refs by stack size
+            foreach(var i in itemsResponse)
+            {
+                i.owner_inventories.Sort(new Comparison<ArkItemSearchResultsInventory>((x, y) =>
                 {
                     return y.count.CompareTo(x.count);
                 }));
-
-                //Add inventory result
-                itemsResponse.Add(new WebArkInventoryItemResult
-                {
-                    item_classname = r.classname,
-                    item_displayname = r.name,
-                    item_icon = r.icon.image_url,
-                    owner_inventories = inventoryRefs,
-                    total_count = totalCount
-                });
-                allTotalCount += totalCount;
             }
 
             //Now, produce an output
@@ -120,7 +127,7 @@ namespace EchoContent.Http.World
                 more = false,
                 page_offset = 0,
                 query = e.Request.Query["q"],
-                total_item_count = allTotalCount
+                total_item_count = 0
             };
 
             //Write
@@ -213,17 +220,18 @@ namespace EchoContent.Http.World
             return dino;
         }
 
-        private static async Task<List<DbItem>> GetItems(DbServer server, int tribeId, string classname)
+        private static async Task<IAsyncCursor<DbItem>> GetItemsStreamed(DbServer server, int tribeId, string query, int limit = int.MaxValue)
         {
             var sortBuilder = Builders<DbItem>.Sort;
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("classname", classname);
+            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Regex("entry_display_name", $"(?i)({Regex.Escape(query)})");
             var response = await server.conn.content_items.FindAsync(filter, new FindOptions<DbItem, DbItem>
             {
-                
+                Limit = limit,
+                Sort = sortBuilder.Ascending("classname"),
+                BatchSize = 30,
             });
-            var items = await response.ToListAsync();
-            return items;
+            return response;
         }
 
         class WebArkInventoryItemReply
@@ -249,7 +257,7 @@ namespace EchoContent.Http.World
         {
             public DbInventoryParentType type;
             public int count;
-            public string id;
+            public string id; //parent inventory id
         }
 
         public class WebArkInventoryHolder

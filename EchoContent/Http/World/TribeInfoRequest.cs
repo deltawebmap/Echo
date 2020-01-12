@@ -1,20 +1,19 @@
-﻿using ArkSaveEditor.Entities;
-using LibDeltaSystem.Db.System;
+﻿using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.Content;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
-using ArkSaveEditor;
 using LibDeltaSystem;
 using LibDeltaSystem.Db.System.Entities;
+using LibDeltaSystem.Entities.ArkEntries;
 
 namespace EchoContent.Http.World
 {
     public static class TribeInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Create
             ResponseTribe tribe = new ResponseTribe
@@ -40,11 +39,11 @@ namespace EchoContent.Http.World
             {"YOUR_TARGET","#1C9BE6" },
         };
 
-        private static async Task<List<MapIcon>> CreateDinos(DbServer server, int tribeId, ArkMapData mapInfo, DeltaPrimalDataPackage package)
+        private static async Task<List<MapIcon>> CreateDinos(DbServer server, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
+            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("is_cryo", false);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var responseList = await response.ToListAsync();
 
@@ -77,7 +76,7 @@ namespace EchoContent.Http.World
                     extras = new MapIconExtra_Dino
                     {
                         prefs = prefs,
-                        url = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeId + "/dinos/" + dino.dino_id.ToString()
+                        url = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeId + "/dino/" + dino.dino_id.ToString()
                     }
                 });
             }
