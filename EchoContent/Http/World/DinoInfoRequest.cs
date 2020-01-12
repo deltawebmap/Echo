@@ -10,12 +10,13 @@ using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem;
 using EchoContent.Entities.Inventory;
 using LibDeltaSystem.Entities.ArkEntries;
+using LibDeltaSystem.Tools;
 
 namespace EchoContent.Http.World
 {
     public static class DinoInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Get dino ID from URL
             string dinoIdString = e.Request.Path.ToString().Split('/')[5];
@@ -49,10 +50,10 @@ namespace EchoContent.Http.World
             await Program.QuickWriteJsonToDoc(e, response);
         }
 
-        private static async Task<DbDino> GetDinosaur(ulong id, DbServer server, int tribeId)
+        private static async Task<DbDino> GetDinosaur(ulong id, DbServer server, int? tribeId)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("dino_id", id);
+            var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId) & filterBuilder.Eq("dino_id", id);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)
@@ -60,10 +61,10 @@ namespace EchoContent.Http.World
             return dino;
         }
 
-        private static async Task<List<DbItem>> GetItems(DbDino dino, DbServer server, int tribeId)
+        private static async Task<List<DbItem>> GetItems(DbDino dino, DbServer server, int? tribeId)
         {
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("parent_id", dino.dino_id) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
+            var filter = FilterBuilderToolDb.CreateTribeFilter<DbItem>(server, tribeId) & filterBuilder.Eq("parent_id", dino.dino_id) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
             var response = await server.conn.content_items.FindAsync(filter);
             var items = await response.ToListAsync();
             return items;

@@ -8,12 +8,13 @@ using MongoDB.Driver;
 using EchoContent.Exceptions;
 using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries;
+using EchoContent.Tools;
 
 namespace EchoContent.Http.World
 {
     public static class TribeOverviewRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Get player profiles
             var playerProfiles = await GetPlayerProfiles(server, tribeId);
@@ -39,20 +40,20 @@ namespace EchoContent.Http.World
 
             //Get dino profiles
             var dinoProfiles = await GetDinosaurs(server, tribeId);
+
+            //Get prefs
+            var massPrefs = await Program.conn.MassGetDinoPrefs(server, dinoProfiles);
+
             List<TribeOverviewDino> dinos = new List<TribeOverviewDino>();
             foreach(var p in dinoProfiles)
             {
                 //Lookup dino entry for this
-                var entry = package.GetDinoEntry(p.classname);
+                var entry = await package.GetDinoEntryByClssnameAsnyc(p.classname);
                 if (entry == null)
                     continue;
 
                 //Get prefs
-                var prefs = await p.GetPrefs(Program.conn);
-
-                //test
-                if (p.is_cryo)
-                    p.status = "C";
+                var prefs = massPrefs[p.dino_id];
 
                 //Convert
                 dinos.Add(new TribeOverviewDino
@@ -63,40 +64,38 @@ namespace EchoContent.Http.World
                     img = entry.icon.image_thumb_url,
                     level = p.level,
                     status = p.status,
-                    color_tag = prefs.color_tag
+                    color_tag = prefs.color_tag,
+                    is_cryo = p.is_cryo,
+                    is_baby = p.is_baby,
+                    is_female = p.is_female
                 });
             }
-
-            //Get tribe info
-            DbTribe tribe = await server.GetTribeAsync(tribeId);
 
             //Create a response
             OverviewResponse response = new OverviewResponse
             {
-                baby_dinos = new List<object>(),
                 dinos = dinos,
-                tribemates = responsePlayers,
-                tribeName = tribe.tribe_name
+                tribemates = responsePlayers
             };
 
             //Write
             await Program.QuickWriteJsonToDoc(e, response);
         }
 
-        private static async Task<List<DbPlayerProfile>> GetPlayerProfiles(DbServer server, int tribeId)
+        private static async Task<List<DbPlayerProfile>> GetPlayerProfiles(DbServer server, int? tribeId)
         {
             //Find all
             var filterBuilder = Builders<DbPlayerProfile>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
+            var filter = FilterBuilderTool.CreateTribeFilter<DbPlayerProfile>(server, tribeId);
             var response = await server.conn.content_player_profiles.FindAsync(filter);
             var profile = await response.ToListAsync();
             return profile;
         }
 
-        private static async Task<List<DbDino>> GetDinosaurs(DbServer server, int tribeId)
+        private static async Task<List<DbDino>> GetDinosaurs(DbServer server, int? tribeId)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
+            var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderTool.CreateTribeFilter<DbDino>(server, tribeId);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var dino = await response.ToListAsync();
             return dino;
@@ -106,8 +105,6 @@ namespace EchoContent.Http.World
         {
             public List<TribeOverviewPlayer> tribemates;
             public List<TribeOverviewDino> dinos;
-            public List<object> baby_dinos;
-            public string tribeName;
         }
 
         class TribeOverviewPlayer
@@ -129,6 +126,9 @@ namespace EchoContent.Http.World
             public string img;
             public string status;
             public string color_tag;
+            public bool is_cryo;
+            public bool is_baby;
+            public bool is_female;
         }
     }
 }

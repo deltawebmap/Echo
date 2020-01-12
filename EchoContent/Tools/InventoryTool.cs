@@ -12,7 +12,7 @@ namespace EchoContent.Tools
 {
     public static class InventoryTool
     {
-        public static async Task<WebInventory> GetWebInventory(List<DbItem> items, DeltaPrimalDataPackage package, DbServer server, int tribeId)
+        public static async Task<WebInventory> GetWebInventory(List<DbItem> items, DeltaPrimalDataPackage package, DbServer server, int? tribeId)
         {
             //Look up item classes
             Dictionary<string, ItemEntry> itemData = new Dictionary<string, ItemEntry>();
@@ -26,7 +26,7 @@ namespace EchoContent.Tools
                     continue;
 
                 //Search for it
-                ItemEntry entry = package.GetItemEntry(classname);
+                ItemEntry entry = await package.GetItemEntryByClssnameAsnyc(classname);
                 if (entry == null)
                     continue;
 
@@ -58,7 +58,7 @@ namespace EchoContent.Tools
                     DbDino d = await DbDino.GetDinosaurByID(Program.conn, ulong.Parse(i.custom_data_value), server);
                     DinosaurEntry dd = null;
                     if (d != null)
-                        dd = package.GetDinoEntry(d.classname);
+                        dd = await package.GetDinoEntryByClssnameAsnyc(d.classname);
                     if(dd != null)
                     {
                         item.type = "CRYOPOD";

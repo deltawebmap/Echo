@@ -1,5 +1,6 @@
 ﻿using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
+using LibDeltaSystem.Tools;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace EchoContent.Http.World
 {
     public static class TribeLogRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId)
         {
             //Get vars
             int limit = 200;
@@ -22,7 +23,7 @@ namespace EchoContent.Http.World
 
             //Query DB
             var filterBuilder = Builders<DbTribeLogEntry>.Filter;
-            var filter = filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("server_id", server.id);
+            var filter = FilterBuilderToolDb.CreateTribeFilter<DbTribeLogEntry>(server, tribeId);
             var results = await Program.conn.content_tribe_log.FindAsync(filter, new FindOptions<DbTribeLogEntry, DbTribeLogEntry>
             {
                 Sort = Builders<DbTribeLogEntry>.Sort.Descending("index"),
@@ -30,11 +31,18 @@ namespace EchoContent.Http.World
                 Skip = page * limit
             });
 
+            //Get tribe ID string
+            string tribeIdString;
+            if (tribeId == null)
+                tribeIdString = "*";
+            else
+                tribeIdString = tribeId.Value.ToString();
+
             //Create a response and write it
             ResponseData response = new ResponseData
             {
                 results = await results.ToListAsync(),
-                next = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeId + "/logs?limit=" + limit + "&page=" + (page + 1)
+                next = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeIdString + "/logs?limit=" + limit + "&page=" + (page + 1)
             };
             await Program.QuickWriteJsonToDoc(e, response);
         }

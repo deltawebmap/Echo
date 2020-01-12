@@ -11,7 +11,7 @@ namespace EchoContent.Http.World
 {
     public static class DinoYounglingsRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, DeltaPrimalDataPackage package)
         {
             //Create response
             ResponseData response = new ResponseData
@@ -23,17 +23,17 @@ namespace EchoContent.Http.World
             await Program.QuickWriteJsonToDoc(e, response);
         }
 
-        private static async Task<List<EggResponseData>> GetEggs(DbServer server, DbUser user, int tribeId, DeltaPrimalDataPackage package)
+        private static async Task<List<EggResponseData>> GetEggs(DbServer server, DbUser user, int? tribeId, DeltaPrimalDataPackage package)
         {
             //Get all eggs
-            var eggs = await DbEgg.GetTribeEggs(Program.conn, server.id, tribeId);
+            var eggs = await DbEgg.GetTribeEggs(Program.conn, server, tribeId);
 
             //Convert all eggs
             List<EggResponseData> output = new List<EggResponseData>();
             foreach(var e in eggs)
             {
                 //Get dinosaur entry
-                DinosaurEntry dinoEntry = package.GetDinoEntry(e.egg_type);
+                DinosaurEntry dinoEntry = await package.GetDinoEntryByClssnameAsnyc(e.egg_type);
 
                 //Convert data
                 EggResponseData r = new EggResponseData

@@ -14,10 +14,10 @@ namespace EchoContent.Http.World
 {
     public static class TribeStructuresRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find structures
-            List<DbStructure> structures = await Program.conn.GetTribeStructures(server.id, tribeId);
+            List<DbStructure> structures = await Program.conn.GetTribeStructures(server, tribeId);
 
             //Create response template
             ResponseData response = new ResponseData

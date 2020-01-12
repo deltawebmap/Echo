@@ -7,12 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
+using LibDeltaSystem.Tools;
 
 namespace EchoContent.Http.World
 {
     public static class DinoListRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, DeltaPrimalDataPackage package)
         {
             //Get vars
             int limit = 30;
@@ -29,7 +30,7 @@ namespace EchoContent.Http.World
 
             //Find
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
+            var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId);
             var response = await server.conn.content_dinos.FindAsync(filter, new FindOptions<DbDino, DbDino>
             {
                 Limit = limit,
@@ -46,7 +47,7 @@ namespace EchoContent.Http.World
                     continue;
 
                 //Get
-                DinosaurEntry entry = package.GetDinoEntry(d.classname);
+                DinosaurEntry entry = await package.GetDinoEntryByClssnameAsnyc(d.classname);
                 if (entry == null)
                     continue;
 
@@ -55,12 +56,19 @@ namespace EchoContent.Http.World
                 entries.Add(d.classname, entry);
             }
 
+            //Get tribe ID string
+            string tribeIdString;
+            if (tribeId == null)
+                tribeIdString = "*";
+            else
+                tribeIdString = tribeId.Value.ToString();
+
             //Create response
             ResponseData r = new ResponseData
             {
                 limit = limit,
                 page = page,
-                next = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeId + "/dino_stats?limit=" + limit + "&page=" + (page + 1),
+                next = Program.ROOT_URL + "/" + server.id + "/tribes/" + tribeIdString + "/dino_stats?limit=" + limit + "&page=" + (page + 1),
                 dinos = responseList,
                 dino_entries = entries,
                 registered_classnames = used_classnames

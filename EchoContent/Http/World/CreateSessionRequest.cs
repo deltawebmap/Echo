@@ -1,4 +1,5 @@
 ﻿using EchoContent.Exceptions;
+using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Entities.ArkEntries;
 using System;
@@ -10,10 +11,16 @@ namespace EchoContent.Http.World
 {
     public static class CreateSessionRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, ArkMapEntry mapInfo)
         {
             //Get base url
-            string baseUrl = Program.ROOT_URL + "/" + server.id;
+            string baseUrl = Program.ROOT_URL + "/" + server.id + "/tribes/{tribe_id}";
+
+            //Get the target tribe of this user, if any
+            int? myTribeId = await server.TryGetTribeIdAsync(user.steam_id);
+            DbTribe tribeData = null;
+            if (myTribeId.HasValue)
+                tribeData = await Program.conn.GetTribeByTribeIdAsync(server.id, myTribeId.Value);
 
             //Produce output
             ResponseData d = new ResponseData
@@ -24,19 +31,19 @@ namespace EchoContent.Http.World
                 mapData = mapInfo,
                 maps = mapInfo.maps,
                 mapBackgroundColor = mapInfo.backgroundColor,
-                href = baseUrl + "/create_session",
-                endpoint_tribes_icons = baseUrl + "/tribes/" + tribeId + "/icons",
-                endpoint_tribes_dino = baseUrl + "/tribes/" + tribeId + "/dino/{dino}",
-                endpoint_tribes_structure = baseUrl + "/tribes/" + tribeId + "/structure/{structure}",
-                endpoint_tribes_itemsearch = baseUrl + "/tribes/" + tribeId + "/items/?q={query}",
-                endpoint_tribes_overview = baseUrl + "/tribes/" + tribeId + "/overview",
-                endpoint_tribes_dino_stats = baseUrl + "/tribes/" + tribeId + "/dino_stats?limit=30",
-                endpoint_tribes_log = baseUrl + "/tribes/" + tribeId + "/log?page=0&limit=200",
+                endpoint_tribes_icons = baseUrl + "/icons",
+                endpoint_tribes_dino = baseUrl + "/dino/{dino}",
+                endpoint_tribes_structure = baseUrl + "/structure/{structure}",
+                endpoint_tribes_itemsearch = baseUrl + "/items/?q={query}",
+                endpoint_tribes_overview = baseUrl + "/overview",
+                endpoint_tribes_dino_stats = baseUrl + "/dino_stats?limit=30",
+                endpoint_tribes_log = baseUrl + "/log?page=0&limit=200",
                 endpoint_put_dino_prefs = "https://deltamap.net/api/servers/" + server.id + "/put_dino_prefs/{dino}",
                 endpoint_canvases = "https://deltamap.net/api/servers/" + server.id + "/canvas",
-                endpoint_tribes_structures = baseUrl + "/tribes/" + tribeId + "/structures/all",
-                endpoint_tribes_structures_metadata = baseUrl + "/tribes/" + tribeId + "/structures/metadata.json",
-                endpoint_tribes_younglings = baseUrl + "/tribes/" + tribeId + "/younglings",
+                endpoint_tribes_structures = baseUrl + "/structures/all",
+                endpoint_tribes_structures_metadata = baseUrl + "/structures/metadata.json",
+                endpoint_tribes_younglings = baseUrl + "/younglings",
+                target_tribe = tribeData
             };
 
             //Write
@@ -54,7 +61,7 @@ namespace EchoContent.Http.World
             public string mapBackgroundColor;
             public ArkMapDisplayData[] maps; //Displable maps
 
-            public string href; //URL of this file. Depending on how this was loaded, this might be different from what was actually requested.
+            public DbTribe target_tribe; //The tribe this user belongs to
             
             public string endpoint_tribes_icons; //Endpoint for viewing tribes
             public string endpoint_tribes_itemsearch; //Item search endpoint

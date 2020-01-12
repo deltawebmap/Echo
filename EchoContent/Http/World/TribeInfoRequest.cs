@@ -8,12 +8,13 @@ using MongoDB.Driver;
 using LibDeltaSystem;
 using LibDeltaSystem.Db.System.Entities;
 using LibDeltaSystem.Entities.ArkEntries;
+using EchoContent.Tools;
 
 namespace EchoContent.Http.World
 {
     public static class TribeInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Create
             ResponseTribe tribe = new ResponseTribe
@@ -39,25 +40,28 @@ namespace EchoContent.Http.World
             {"YOUR_TARGET","#1C9BE6" },
         };
 
-        private static async Task<List<MapIcon>> CreateDinos(DbServer server, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        private static async Task<List<MapIcon>> CreateDinos(DbServer server, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Eq("is_cryo", false);
+            var filter = FilterBuilderTool.CreateTribeFilter<DbDino>(server, tribeId) & filterBuilder.Eq("is_cryo", false);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var responseList = await response.ToListAsync();
+
+            //Get prefs
+            var massPrefs = await Program.conn.MassGetDinoPrefs(server, responseList);
 
             //Convert all dinosaurs
             List<MapIcon> dinos = new List<MapIcon>();
             foreach (var dino in responseList)
             {
                 //Try to find a dinosaur entry
-                var entry = package.GetDinoEntry(dino.classname);
+                var entry = await package.GetDinoEntryByClssnameAsnyc(dino.classname);
                 if (entry == null)
                     continue;
 
                 //Get prefs
-                var prefs = await dino.GetPrefs(Program.conn);
+                var prefs = massPrefs[dino.dino_id];
 
                 //Add
                 dinos.Add(new MapIcon
@@ -88,7 +92,7 @@ namespace EchoContent.Http.World
         {
             public float gameTime;
             public List<MapIcon> icons;
-            public int tribeId;
+            public int? tribeId;
         }
 
         class MapIcon

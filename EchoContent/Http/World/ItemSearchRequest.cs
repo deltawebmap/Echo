@@ -12,6 +12,7 @@ using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem.Entities.ArkEntries;
 using System.Text.RegularExpressions;
+using EchoContent.Tools;
 
 namespace EchoContent.Http.World
 {
@@ -19,7 +20,7 @@ namespace EchoContent.Http.World
     {
         public const int PAGE_SIZE = 25;
 
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all entries that could match
             string query = e.Request.Query["q"].ToString().ToLower();
@@ -134,7 +135,7 @@ namespace EchoContent.Http.World
             await Program.QuickWriteJsonToDoc(e, output);
         }
 
-        private static async Task<WebArkInventoryHolder> GetInventoryHolder(DbServer server, int tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        private static async Task<WebArkInventoryHolder> GetInventoryHolder(DbServer server, int? tribe_id, DbItem i, DeltaPrimalDataPackage package)
         {
             switch(i.parent_type)
             {
@@ -147,7 +148,7 @@ namespace EchoContent.Http.World
             }
         }
 
-        private static async Task<WebArkInventoryDino> GetDinoInventoryHolder(DbServer server, int tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        private static async Task<WebArkInventoryDino> GetDinoInventoryHolder(DbServer server, int? tribe_id, DbItem i, DeltaPrimalDataPackage package)
         {
             //Get dino
             DbDino dino = await DbDino.GetDinosaurByID(Program.conn, ulong.Parse(i.parent_id), server);
@@ -170,7 +171,7 @@ namespace EchoContent.Http.World
             };
         }
 
-        private static async Task<WebArkInventoryStructure> GetStructureInventoryHolder(DbServer server, int tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        private static async Task<WebArkInventoryStructure> GetStructureInventoryHolder(DbServer server, int? tribe_id, DbItem i, DeltaPrimalDataPackage package)
         {
             //Get structure
             DbStructure structure = await DbStructure.GetStructureByID(Program.conn, int.Parse(i.parent_id), server);
@@ -220,11 +221,11 @@ namespace EchoContent.Http.World
             return dino;
         }
 
-        private static async Task<IAsyncCursor<DbItem>> GetItemsStreamed(DbServer server, int tribeId, string query, int limit = int.MaxValue)
+        private static async Task<IAsyncCursor<DbItem>> GetItemsStreamed(DbServer server, int? tribeId, string query, int limit = int.MaxValue)
         {
             var sortBuilder = Builders<DbItem>.Sort;
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId) & filterBuilder.Regex("entry_display_name", $"(?i)({Regex.Escape(query)})");
+            var filter = FilterBuilderTool.CreateTribeFilter<DbItem>(server, tribeId) & filterBuilder.Regex("entry_display_name", $"(?i)({Regex.Escape(query)})");
             var response = await server.conn.content_items.FindAsync(filter, new FindOptions<DbItem, DbItem>
             {
                 Limit = limit,

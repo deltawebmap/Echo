@@ -14,7 +14,7 @@ namespace EchoContent.Http.World
 {
     public static class StructureInfoRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Get dino ID from URL
             string structureIdString = e.Request.Path.ToString().Split('/')[5];
@@ -25,11 +25,11 @@ namespace EchoContent.Http.World
             DbStructure structure = await DbStructure.GetStructureByID(Program.conn, id, server);
             if (structure == null)
                 throw new StandardError("This structure does not exist.", "This ID is not valid.", 400);
-            if (structure.tribe_id != tribeId)
+            if (structure.tribe_id != tribeId && tribeId.HasValue)
                 throw new StandardError("This structure does not belong to you.", "You may not access this structure.", 400);
 
             //Get structure items and inventory
-            List<DbItem> items = await structure.GetItems(server, tribeId);
+            List<DbItem> items = await structure.GetItems(server);
             WebInventory inventory = await Tools.InventoryTool.GetWebInventory(items, package, server, tribeId);
 
             //Attempt to get info about this structure

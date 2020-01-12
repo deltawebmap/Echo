@@ -8,16 +8,17 @@ using System.Threading.Tasks;
 using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Entities;
+using LibDeltaSystem.Tools;
 
 namespace EchoContent.Http.World
 {
     public static class ThumbnailRequest
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & filterBuilder.Eq("server_id", server.id) & filterBuilder.Eq("tribe_id", tribeId);
+            var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId);
             var response = await server.conn.content_dinos.FindAsync(filter);
             var responseList = await response.ToListAsync();
 
@@ -40,7 +41,7 @@ namespace EchoContent.Http.World
                     continue;
                 
                 //Try to find a dinosaur entry
-                var entry = package.GetDinoEntry(dino.classname);
+                var entry = await package.GetDinoEntryByClssnameAsnyc(dino.classname);
                 if (entry == null)
                     continue;
 
