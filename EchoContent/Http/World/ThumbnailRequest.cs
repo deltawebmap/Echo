@@ -19,7 +19,7 @@ namespace EchoContent.Http.World
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId);
-            var response = await server.conn.content_dinos.FindAsync(filter);
+            var response = await Program.conn.content_dinos.FindAsync(filter);
             var responseList = await response.ToListAsync();
 
             //Find bounds to use

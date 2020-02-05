@@ -214,7 +214,7 @@ namespace EchoContent.Http.World
         {
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("_id", ObjectId.Parse(id));
-            var response = await server.conn.content_dinos.FindAsync(filter);
+            var response = await Program.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)
                 throw new StandardError("Dinosaur not found.", "This dinosaur ID is invalid.", 404);
@@ -226,7 +226,7 @@ namespace EchoContent.Http.World
             var sortBuilder = Builders<DbItem>.Sort;
             var filterBuilder = Builders<DbItem>.Filter;
             var filter = FilterBuilderTool.CreateTribeFilter<DbItem>(server, tribeId) & filterBuilder.Regex("entry_display_name", $"(?i)({Regex.Escape(query)})");
-            var response = await server.conn.content_items.FindAsync(filter, new FindOptions<DbItem, DbItem>
+            var response = await Program.conn.content_items.FindAsync(filter, new FindOptions<DbItem, DbItem>
             {
                 Limit = limit,
                 Sort = sortBuilder.Ascending("classname"),

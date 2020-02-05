@@ -1,4 +1,5 @@
 ﻿using EchoContent.Exceptions;
+using LibDeltaSystem.Db;
 using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Entities.ArkEntries;
@@ -17,10 +18,20 @@ namespace EchoContent.Http.World
             string baseUrl = Program.ROOT_URL + "/" + server.id + "/tribes/{tribe_id}";
 
             //Get the target tribe of this user, if any
-            int? myTribeId = await server.TryGetTribeIdAsync(user.steam_id);
+            int? myTribeId = await server.TryGetTribeIdAsync(Program.conn, user.steam_id);
             DbTribe tribeData = null;
             if (myTribeId.HasValue)
                 tribeData = await Program.conn.GetTribeByTribeIdAsync(server.id, myTribeId.Value);
+
+            //Get my location
+            DbVector3 myPos = null;
+            var profile = await server.GetPlayerProfileBySteamIDAsync(Program.conn, myTribeId, user.steam_id);
+            if(profile != null)
+            {
+                var character = await server.GetPlayerCharacterById(Program.conn, myTribeId, (uint)profile.ark_id);
+                if (character != null)
+                    myPos = character.pos;
+            }
 
             //Produce output
             ResponseData d = new ResponseData
@@ -43,7 +54,9 @@ namespace EchoContent.Http.World
                 endpoint_tribes_structures = baseUrl + "/structures/all",
                 endpoint_tribes_structures_metadata = baseUrl + "/structures/metadata.json",
                 endpoint_tribes_younglings = baseUrl + "/younglings",
-                target_tribe = tribeData
+                target_tribe = tribeData,
+                my_location = myPos,
+                my_profile = profile
             };
 
             //Write
@@ -62,6 +75,8 @@ namespace EchoContent.Http.World
             public ArkMapDisplayData[] maps; //Displable maps
 
             public DbTribe target_tribe; //The tribe this user belongs to
+            public DbVector3 my_location; //The current location of the user
+            public DbPlayerProfile my_profile; //The current profile of this user, contains ARK ID
             
             public string endpoint_tribes_icons; //Endpoint for viewing tribes
             public string endpoint_tribes_itemsearch; //Item search endpoint

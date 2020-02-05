@@ -54,7 +54,7 @@ namespace EchoContent.Http.World
         {
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId) & filterBuilder.Eq("dino_id", id);
-            var response = await server.conn.content_dinos.FindAsync(filter);
+            var response = await Program.conn.content_dinos.FindAsync(filter);
             var dino = await response.FirstOrDefaultAsync();
             if (dino == null)
                 throw new StandardError("Dinosaur not found.", "This dinosaur ID is invalid.", 404);
@@ -65,7 +65,7 @@ namespace EchoContent.Http.World
         {
             var filterBuilder = Builders<DbItem>.Filter;
             var filter = FilterBuilderToolDb.CreateTribeFilter<DbItem>(server, tribeId) & filterBuilder.Eq("parent_id", dino.dino_id) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);
-            var response = await server.conn.content_items.FindAsync(filter);
+            var response = await Program.conn.content_items.FindAsync(filter);
             var items = await response.ToListAsync();
             return items;
         }

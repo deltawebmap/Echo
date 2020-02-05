@@ -19,7 +19,7 @@ namespace EchoContent
         public static DeltaConnection conn;
         public static EchoReaderConfig config;
 
-        public const string ROOT_URL = "https://echo-content.deltamap.net";
+        public static string ROOT_URL { get { return conn.config.hosts.echo; } }
 
         static void Main(string[] args)
         {
@@ -43,7 +43,7 @@ namespace EchoContent
                 .UseKestrel(options =>
                 {
                     IPAddress addr = IPAddress.Any;
-                    options.Listen(addr, 43289);
+                    options.Listen(addr, config.port);
 
                 })
                 .UseStartup<Program>()

@@ -22,7 +22,7 @@ namespace EchoContent.Http.World
             foreach(var p in playerProfiles)
             {
                 //Fetch steam data
-                DbSteamCache steamProfile = await server.conn.GetSteamProfileById(p.steam_id);
+                DbSteamCache steamProfile = await Program.conn.GetSteamProfileById(p.steam_id);
                 if (steamProfile == null)
                     continue;
 
@@ -87,7 +87,7 @@ namespace EchoContent.Http.World
             //Find all
             var filterBuilder = Builders<DbPlayerProfile>.Filter;
             var filter = FilterBuilderTool.CreateTribeFilter<DbPlayerProfile>(server, tribeId);
-            var response = await server.conn.content_player_profiles.FindAsync(filter);
+            var response = await Program.conn.content_player_profiles.FindAsync(filter);
             var profile = await response.ToListAsync();
             return profile;
         }
@@ -96,7 +96,7 @@ namespace EchoContent.Http.World
         {
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderTool.CreateTribeFilter<DbDino>(server, tribeId);
-            var response = await server.conn.content_dinos.FindAsync(filter);
+            var response = await Program.conn.content_dinos.FindAsync(filter);
             var dino = await response.ToListAsync();
             return dino;
         }

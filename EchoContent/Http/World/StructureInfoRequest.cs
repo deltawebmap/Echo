@@ -29,7 +29,7 @@ namespace EchoContent.Http.World
                 throw new StandardError("This structure does not belong to you.", "You may not access this structure.", 400);
 
             //Get structure items and inventory
-            List<DbItem> items = await structure.GetItems(server);
+            List<DbItem> items = await structure.GetItems(Program.conn, server);
             WebInventory inventory = await Tools.InventoryTool.GetWebInventory(items, package, server, tribeId);
 
             //Attempt to get info about this structure

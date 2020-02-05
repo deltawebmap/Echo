@@ -20,7 +20,7 @@ namespace EchoContent.Http
             //Handle CORS stuff
             e.Response.Headers.Add("Server", "Delta Web Map 'Echo' server");
             e.Response.Headers.Add("Access-Control-Allow-Headers", "Authorization");
-            e.Response.Headers.Add("Access-Control-Allow-Origin", "https://deltamap.net");
+            e.Response.Headers.Add("Access-Control-Allow-Origin", "*");
             e.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE, PUT, PATCH");
             if(e.Request.Method.ToUpper() == "OPTIONS")
             {
@@ -30,6 +30,12 @@ namespace EchoContent.Http
 
             try
             {
+                //Check if this is the special structure metadata path
+                if (e.Request.Path == "/structure_metadata.json") {
+                    await World.TribeStructuresRequest.OnMetadataHttpRequest(e);
+                    return;
+                }
+
                 //Get the server ID from the URL
                 string[] split = e.Request.Path.ToString().Split('/');
                 if(split.Length < 3)
@@ -155,7 +161,7 @@ namespace EchoContent.Http
             }
 
             //Get the target tribe ID
-            int? myTribeId = await s.TryGetTribeIdAsync(u.steam_id);
+            int? myTribeId = await s.TryGetTribeIdAsync(Program.conn, u.steam_id);
             if (!myTribeId.HasValue)
             {
                 return 0;
