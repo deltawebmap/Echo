@@ -1,5 +1,7 @@
-﻿using LibDeltaSystem;
+﻿using EchoContent.Http.World.Definitions;
+using LibDeltaSystem;
 using LibDeltaSystem.Db.Content;
+using LibDeltaSystem.WebFramework;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using MongoDB.Driver;
@@ -34,27 +36,18 @@ namespace EchoContent
             conn.Connect().GetAwaiter().GetResult();
 
             //Start server
-            MainAsync().GetAwaiter().GetResult();
-        }
-
-        public static Task MainAsync()
-        {
-            var host = new WebHostBuilder()
-                .UseKestrel(options =>
-                {
-                    IPAddress addr = IPAddress.Any;
-                    options.Listen(addr, config.port);
-
-                })
-                .UseStartup<Program>()
-                .Build();
-
-            return host.RunAsync();
-        }
-
-        public void Configure(IApplicationBuilder app)
-        {
-            app.Run(Http.HttpHandler.OnHttpRequest);
+            DeltaWebServer server = new DeltaWebServer(conn, config.port);
+            server.AddService(new StructureMetadataDefinition());
+            server.AddService(new CreateSessionDefinition());
+            server.AddService(new DinoInfoDefinition());
+            server.AddService(new DinoListDefinition());
+            server.AddService(new DinoYounglingsDefinition());
+            server.AddService(new ItemSearchDefinition());
+            server.AddService(new StructureInfoDefinition());
+            server.AddService(new TribeInfoDefinition());
+            server.AddService(new TribeOverviewDefinition());
+            server.AddService(new TribeStructuresDefinition());
+            server.RunAsync().GetAwaiter().GetResult();
         }
 
         public static Task QuickWriteToDoc(Microsoft.AspNetCore.Http.HttpContext context, string content, string type = "text/html", int code = 200)
@@ -77,14 +70,6 @@ namespace EchoContent
                 buffer = sr.ReadToEnd();
 
             return buffer;
-        }
-
-        public static T DecodePostBody<T>(Microsoft.AspNetCore.Http.HttpContext context)
-        {
-            string buffer = GetPostBodyString(context);
-
-            //Deserialize
-            return JsonConvert.DeserializeObject<T>(buffer);
         }
 
         public static Task QuickWriteJsonToDoc<T>(Microsoft.AspNetCore.Http.HttpContext context, T data, int code = 200)

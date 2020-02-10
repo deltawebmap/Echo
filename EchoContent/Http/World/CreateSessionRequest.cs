@@ -1,8 +1,11 @@
 ﻿using EchoContent.Exceptions;
+using LibDeltaSystem;
 using LibDeltaSystem.Db;
 using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Entities.ArkEntries;
+using LibDeltaSystem.WebFramework.ServiceTemplates;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,12 +13,24 @@ using System.Threading.Tasks;
 
 namespace EchoContent.Http.World
 {
-    public static class CreateSessionRequest
+    public class CreateSessionRequest : ArkServerDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, ArkMapEntry mapInfo)
+        public CreateSessionRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Get base url
             string baseUrl = Program.ROOT_URL + "/" + server.id + "/tribes/{tribe_id}";
+
+            //Get this map from the maps
+            var mapInfo = await server.GetMapEntryAsync(conn);
+            if (mapInfo == null)
+            {
+                await WriteString("The map this server is using is not supported.", "text/plain", 400);
+                return;
+            }
 
             //Get the target tribe of this user, if any
             int? myTribeId = await server.TryGetTribeIdAsync(Program.conn, user.steam_id);
@@ -36,23 +51,20 @@ namespace EchoContent.Http.World
             //Produce output
             ResponseData d = new ResponseData
             {
-                dayTime = server.latest_server_time,
-                systemTime = DateTime.UtcNow,
                 mapName = mapInfo.displayName,
                 mapData = mapInfo,
                 maps = mapInfo.maps,
                 mapBackgroundColor = mapInfo.backgroundColor,
                 endpoint_tribes_icons = baseUrl + "/icons",
-                endpoint_tribes_dino = baseUrl + "/dino/{dino}",
-                endpoint_tribes_structure = baseUrl + "/structure/{structure}",
-                endpoint_tribes_itemsearch = baseUrl + "/items/?q={query}",
+                endpoint_tribes_dino = baseUrl + "/dinos/{dino}",
+                endpoint_tribes_structure = baseUrl + "/structures/{structure}",
+                endpoint_tribes_itemsearch = baseUrl + "/items?q={query}",
                 endpoint_tribes_overview = baseUrl + "/overview",
                 endpoint_tribes_dino_stats = baseUrl + "/dino_stats?limit=30",
                 endpoint_tribes_log = baseUrl + "/log?page=0&limit=200",
                 endpoint_put_dino_prefs = "https://deltamap.net/api/servers/" + server.id + "/put_dino_prefs/{dino}",
                 endpoint_canvases = "https://deltamap.net/api/servers/" + server.id + "/canvas",
-                endpoint_tribes_structures = baseUrl + "/structures/all",
-                endpoint_tribes_structures_metadata = baseUrl + "/structures/metadata.json",
+                endpoint_tribes_structures = baseUrl + "/structures",
                 endpoint_tribes_younglings = baseUrl + "/younglings",
                 target_tribe = tribeData,
                 my_location = myPos,
@@ -60,15 +72,11 @@ namespace EchoContent.Http.World
             };
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, d);
+            await WriteJSON(d);
         }
 
         class ResponseData
         {
-            public float dayTime;
-
-            public DateTime systemTime; //Time on this server that we should use instead of the user's system time
-
             public string mapName;
             public ArkMapEntry mapData;
             public string mapBackgroundColor;
@@ -88,7 +96,6 @@ namespace EchoContent.Http.World
             public string endpoint_put_dino_prefs; //Puts dino prefs
             public string endpoint_canvases; //Gets canvas list
             public string endpoint_tribes_structures; //Structures
-            public string endpoint_tribes_structures_metadata; //Structure metadata
             public string endpoint_tribes_younglings; //Baby dinos
         }
     }

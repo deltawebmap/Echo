@@ -4,6 +4,7 @@ using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.System.Entities;
 using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Entities.DynamicTiles;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,13 @@ using System.Threading.Tasks;
 
 namespace EchoContent.Http.World
 {
-    public static class TribeStructuresRequest
+    public class TribeStructuresRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public TribeStructuresRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Find structures
             List<DbStructure> structures = await Program.conn.GetTribeStructures(server, tribeId);
@@ -67,23 +72,7 @@ namespace EchoContent.Http.World
             }
 
             //Write response
-            await Program.QuickWriteJsonToDoc(e, response);
-        }
-
-        public static async Task OnMetadataHttpRequest(Microsoft.AspNetCore.Http.HttpContext e)
-        {
-            //Simply write the structure metadata
-            await Program.QuickWriteJsonToDoc(e, new MetadataResponse
-            {
-                metadata = Program.conn.GetStructureMetadata(),
-                image_url = Program.config.endpoint_structure_images
-            });
-        }
-
-        class MetadataResponse
-        {
-            public List<StructureMetadata> metadata;
-            public string image_url;
+            await WriteJSON(response);
         }
 
         class ResponseData

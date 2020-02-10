@@ -10,12 +10,17 @@ using LibDeltaSystem.Db.System.Entities;
 using LibDeltaSystem.Entities.ArkEntries;
 using EchoContent.Tools;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace EchoContent.Http.World
 {
-    public static class TribeInfoRequest
+    public class TribeInfoRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public TribeInfoRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Create
             ResponseTribe tribe = new ResponseTribe
@@ -26,11 +31,11 @@ namespace EchoContent.Http.World
             };
 
             //Add all types
-            tribe.icons.AddRange(await CreateDinos(server, tribeId, mapInfo, package));
-            tribe.icons.AddRange(await CreatePlayers(server, tribeId, mapInfo, package));
+            tribe.icons.AddRange(await CreateDinos());
+            tribe.icons.AddRange(await CreatePlayers());
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, tribe);
+            await WriteJSON(tribe);
         }
 
         private static Dictionary<string, string> DINO_STATUS_COLOR_MAP = new Dictionary<string, string>
@@ -42,7 +47,7 @@ namespace EchoContent.Http.World
             {"YOUR_TARGET","#1C9BE6" },
         };
 
-        private static async Task<List<MapIcon>> CreateDinos(DbServer server, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        private async Task<List<MapIcon>> CreateDinos()
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
@@ -90,7 +95,7 @@ namespace EchoContent.Http.World
             return dinos;
         }
 
-        private static async Task<List<MapIcon>> CreatePlayers(DbServer server, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        private async Task<List<MapIcon>> CreatePlayers()
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbPlayerCharacter>.Filter;

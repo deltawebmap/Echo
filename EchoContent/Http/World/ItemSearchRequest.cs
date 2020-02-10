@@ -13,14 +13,19 @@ using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem.Entities.ArkEntries;
 using System.Text.RegularExpressions;
 using EchoContent.Tools;
+using Microsoft.AspNetCore.Http;
 
 namespace EchoContent.Http.World
 {
-    public static class ItemSearchRequest
+    public class ItemSearchRequest : EchoTribeDeltaService
     {
         public const int PAGE_SIZE = 25;
 
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public ItemSearchRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Find all entries that could match
             string query = e.Request.Query["q"].ToString().ToLower();
@@ -35,7 +40,7 @@ namespace EchoContent.Http.World
             inventories.Add(1, new Dictionary<string, WebArkInventoryHolder>());
 
             //Now, find all inventories owning these
-            var results = await GetItemsStreamed(server, tribeId, query);
+            var results = await GetItemsStreamed(query);
             bool finished = false;
             int calls = 0;
             while(await results.MoveNextAsync() && !finished)
@@ -94,7 +99,7 @@ namespace EchoContent.Http.World
                     {
                         //Now, we know we don't have an inventory registered yet for this holder
                         //Get the data of the holder we're about to register
-                        WebArkInventoryHolder holder = await GetInventoryHolder(server, tribeId, i, package);
+                        WebArkInventoryHolder holder = await GetInventoryHolder(i);
                         inventories[(int)i.parent_type].Add(i.parent_id, holder);
                     }
 
@@ -132,23 +137,23 @@ namespace EchoContent.Http.World
             };
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, output);
+            await WriteJSON(output);
         }
 
-        private static async Task<WebArkInventoryHolder> GetInventoryHolder(DbServer server, int? tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        private async Task<WebArkInventoryHolder> GetInventoryHolder(DbItem i)
         {
             switch(i.parent_type)
             {
                 case DbInventoryParentType.Dino:
-                    return await GetDinoInventoryHolder(server, tribe_id, i, package);
+                    return await GetDinoInventoryHolder(i);
                 case DbInventoryParentType.Structure:
-                    return await GetStructureInventoryHolder(server, tribe_id, i, package);
+                    return await GetStructureInventoryHolder(i);
                 default:
                     return null;
             }
         }
 
-        private static async Task<WebArkInventoryDino> GetDinoInventoryHolder(DbServer server, int? tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        private async Task<WebArkInventoryDino> GetDinoInventoryHolder(DbItem i)
         {
             //Get dino
             DbDino dino = await DbDino.GetDinosaurByID(Program.conn, ulong.Parse(i.parent_id), server);
@@ -171,7 +176,7 @@ namespace EchoContent.Http.World
             };
         }
 
-        private static async Task<WebArkInventoryStructure> GetStructureInventoryHolder(DbServer server, int? tribe_id, DbItem i, DeltaPrimalDataPackage package)
+        private async Task<WebArkInventoryStructure> GetStructureInventoryHolder(DbItem i)
         {
             //Get structure
             DbStructure structure = await DbStructure.GetStructureByID(Program.conn, int.Parse(i.parent_id), server);
@@ -221,7 +226,7 @@ namespace EchoContent.Http.World
             return dino;
         }
 
-        private static async Task<IAsyncCursor<DbItem>> GetItemsStreamed(DbServer server, int? tribeId, string query, int limit = int.MaxValue)
+        private async Task<IAsyncCursor<DbItem>> GetItemsStreamed(string query, int limit = int.MaxValue)
         {
             var sortBuilder = Builders<DbItem>.Sort;
             var filterBuilder = Builders<DbItem>.Filter;

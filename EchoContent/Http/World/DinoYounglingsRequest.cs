@@ -2,6 +2,7 @@
 using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,21 +10,25 @@ using System.Threading.Tasks;
 
 namespace EchoContent.Http.World
 {
-    public static class DinoYounglingsRequest
+    public class DinoYounglingsRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, DeltaPrimalDataPackage package)
+        public DinoYounglingsRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Create response
             ResponseData response = new ResponseData
             {
-                eggs = await GetEggs(server, user, tribeId, package)
+                eggs = await GetEggs()
             };
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, response);
+            await WriteJSON(response);
         }
 
-        private static async Task<List<EggResponseData>> GetEggs(DbServer server, DbUser user, int? tribeId, DeltaPrimalDataPackage package)
+        private async Task<List<EggResponseData>> GetEggs()
         {
             //Get all eggs
             var eggs = await DbEgg.GetTribeEggs(Program.conn, server, tribeId);

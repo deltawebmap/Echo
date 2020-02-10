@@ -5,6 +5,7 @@ using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,17 +13,30 @@ using System.Threading.Tasks;
 
 namespace EchoContent.Http.World
 {
-    public static class StructureInfoRequest
+    public class StructureInfoRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
-        {
-            //Get dino ID from URL
-            string structureIdString = e.Request.Path.ToString().Split('/')[5];
-            if (!int.TryParse(structureIdString, out int id))
-                throw new StandardError("This is an invalid structure ID.", "Could not parse as int.", 400);
+        public int structure_id;
 
+        public StructureInfoRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task<bool> SetArgs(Dictionary<string, string> args)
+        {
+            if (!await base.SetArgs(args))
+                return false;
+            if (!int.TryParse(args["STRUCTURE"], out structure_id))
+            {
+                await WriteString("This is not a valid structure ID", "text/plain", 400);
+                return false;
+            }
+            return true;
+        }
+
+        public override async Task OnRequest()
+        {
             //Get structure
-            DbStructure structure = await DbStructure.GetStructureByID(Program.conn, id, server);
+            DbStructure structure = await DbStructure.GetStructureByID(Program.conn, structure_id, server);
             if (structure == null)
                 throw new StandardError("This structure does not exist.", "This ID is not valid.", 400);
             if (structure.tribe_id != tribeId && tribeId.HasValue)
@@ -70,7 +84,7 @@ namespace EchoContent.Http.World
             };
 
             //Send
-            await Program.QuickWriteJsonToDoc(e, response);
+            await WriteJSON(response);
         }
 
         class ResponseStructure

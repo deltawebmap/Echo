@@ -9,12 +9,17 @@ using EchoContent.Exceptions;
 using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries;
 using EchoContent.Tools;
+using Microsoft.AspNetCore.Http;
 
 namespace EchoContent.Http.World
 {
-    public static class TribeOverviewRequest
+    public class TribeOverviewRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public TribeOverviewRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Get player profiles
             var playerProfiles = await GetPlayerProfiles(server, tribeId);
@@ -79,7 +84,7 @@ namespace EchoContent.Http.World
             };
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, response);
+            await WriteJSON(response);
         }
 
         private static async Task<List<DbPlayerProfile>> GetPlayerProfiles(DbServer server, int? tribeId)

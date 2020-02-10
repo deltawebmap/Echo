@@ -11,20 +11,34 @@ using LibDeltaSystem;
 using EchoContent.Entities.Inventory;
 using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Tools;
+using Microsoft.AspNetCore.Http;
 
 namespace EchoContent.Http.World
 {
-    public static class DinoInfoRequest
+    public class DinoInfoRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, ArkMapEntry mapInfo, DeltaPrimalDataPackage package)
+        public ulong dino_id;
+        
+        public DinoInfoRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
         {
-            //Get dino ID from URL
-            string dinoIdString = e.Request.Path.ToString().Split('/')[5];
-            if (!ulong.TryParse(dinoIdString, out ulong dinoId))
-                throw new StandardError("This is an invalid dinosaur ID.", "Could not parse as ulong.", 400);
+        }
 
+        public override async Task<bool> SetArgs(Dictionary<string, string> args)
+        {
+            if (!await base.SetArgs(args))
+                return false;
+            if(!ulong.TryParse(args["DINO"], out dino_id))
+            {
+                await WriteString("This is not a valid dinosaur ID", "text/plain", 400);
+                return false;
+            }
+            return true;
+        }
+
+        public override async Task OnRequest()
+        {
             //Get the dino
-            DbDino dino = await GetDinosaur(dinoId, server, tribeId);
+            DbDino dino = await GetDinosaur(dino_id);
 
             //Get dino prefs
             var prefs = await dino.GetPrefs(Program.conn);
@@ -33,7 +47,7 @@ namespace EchoContent.Http.World
             DinosaurEntry dinoEntry = await package.GetDinoEntryByClssnameAsnyc(dino.classname);
 
             //Find all inventory items
-            List<DbItem> items = await GetItems(dino, server, tribeId);
+            List<DbItem> items = await GetItems(dino);
             WebInventory inventory = await Tools.InventoryTool.GetWebInventory(items, package, server, tribeId);
 
             //Respond with dinosaur data
@@ -47,10 +61,10 @@ namespace EchoContent.Http.World
             };
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, response);
+            await WriteJSON(response);
         }
 
-        private static async Task<DbDino> GetDinosaur(ulong id, DbServer server, int? tribeId)
+        private async Task<DbDino> GetDinosaur(ulong id)
         {
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId) & filterBuilder.Eq("dino_id", id);
@@ -61,7 +75,7 @@ namespace EchoContent.Http.World
             return dino;
         }
 
-        private static async Task<List<DbItem>> GetItems(DbDino dino, DbServer server, int? tribeId)
+        private async Task<List<DbItem>> GetItems(DbDino dino)
         {
             var filterBuilder = Builders<DbItem>.Filter;
             var filter = FilterBuilderToolDb.CreateTribeFilter<DbItem>(server, tribeId) & filterBuilder.Eq("parent_id", dino.dino_id) & filterBuilder.Eq("parent_type", DbInventoryParentType.Dino);

@@ -9,12 +9,17 @@ using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem.Tools;
 using LibDeltaSystem.Db.System.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace EchoContent.Http.World
 {
-    public static class DinoListRequest
+    public class DinoListRequest : EchoTribeDeltaService
     {
-        public static async Task OnHttpRequest(Microsoft.AspNetCore.Http.HttpContext e, DbServer server, DbUser user, int? tribeId, DeltaPrimalDataPackage package)
+        public DinoListRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        {
+        }
+
+        public override async Task OnRequest()
         {
             //Get vars
             int limit = 30;
@@ -27,7 +32,7 @@ namespace EchoContent.Http.World
             //Optionally, we can post an array of classnames we don't need entries for. If that was sent, use it
             List<string> used_classnames = new List<string>();
             if (Program.FindRequestMethod(e) == RequestHttpMethod.post)
-                used_classnames = Program.DecodePostBody<List<string>>(e);
+                used_classnames = await DecodePOSTBody<List<string>>();
 
             //Find
             var filterBuilder = Builders<DbDino>.Filter;
@@ -98,7 +103,7 @@ namespace EchoContent.Http.World
             };
 
             //Write
-            await Program.QuickWriteJsonToDoc(e, r);
+            await WriteJSON(r);
         }
 
         class ResponseData
