@@ -4,7 +4,10 @@ using LibDeltaSystem.Db.System;
 using LibDeltaSystem.Db.System.Entities;
 using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.Entities.DynamicTiles;
+using LibDeltaSystem.Tools;
+using LibDeltaSystem.WebFramework;
 using Microsoft.AspNetCore.Http;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +25,8 @@ namespace EchoContent.Http.World
         public override async Task OnRequest()
         {
             //Find structures
-            List<DbStructure> structures = await Program.conn.GetTribeStructures(server, tribeId);
+            EndDebugCheckpoint("Get structures");
+            List<DbStructure> structures = await GetTribeStructures(server, tribeId);
 
             //Create response template
             ResponseData response = new ResponseData
@@ -32,6 +36,7 @@ namespace EchoContent.Http.World
             };
 
             //Sort
+            EndDebugCheckpoint("Sort structures");
             structures.Sort(new Comparison<DbStructure>((x, y) =>
             {
                 if (x.has_inventory || y.has_inventory)
@@ -40,6 +45,7 @@ namespace EchoContent.Http.World
             }));
 
             //Loop through structures and find where they are
+            EndDebugCheckpoint("Lay out structures");
             foreach (var t in structures)
             {
                 //Get data
@@ -73,6 +79,36 @@ namespace EchoContent.Http.World
 
             //Write response
             await WriteJSON(response);
+        }
+
+        private async Task<List<DbStructure>> GetTribeStructures(DbServer server, int? tribe_id)
+        {
+            //Make sure structures are up to date
+            var metadata = conn.GetSupportedStructureMetadata();
+
+            //Commit query
+            var filterBuilder = Builders<DbStructure>.Filter;
+            var filter = FilterBuilderToolDb.CreateTribeFilter<DbStructure>(server, tribe_id) &
+                filterBuilder.In("classname", metadata) & filterBuilder.And(BuildFilters());
+            var results = await conn.content_structures.FindAsync(filter);
+            return await results.ToListAsync();
+        }
+
+        private List<FilterDefinition<DbStructure>> BuildFilters()
+        {
+            var filterBuilder = Builders<DbStructure>.Filter;
+            List<FilterDefinition<DbStructure>> filters = new List<FilterDefinition<DbStructure>>();
+
+            if (QueryParamsTool.TryGetFloatField(e, "upperx", out float minX))
+                filters.Add(filterBuilder.Lt("location.x", minX));
+            if (QueryParamsTool.TryGetFloatField(e, "uppery", out float minY))
+                filters.Add(filterBuilder.Lt("location.y", minY));
+            if (QueryParamsTool.TryGetFloatField(e, "lowerx", out float maxX))
+                filters.Add(filterBuilder.Gt("location.x", maxX));
+            if (QueryParamsTool.TryGetFloatField(e, "lowery", out float maxY))
+                filters.Add(filterBuilder.Gt("location.y", maxY));
+
+            return filters;
         }
 
         class ResponseData

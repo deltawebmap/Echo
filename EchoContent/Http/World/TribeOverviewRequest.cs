@@ -10,116 +10,61 @@ using LibDeltaSystem;
 using LibDeltaSystem.Entities.ArkEntries;
 using EchoContent.Tools;
 using Microsoft.AspNetCore.Http;
+using static EchoContent.Http.World.TribeOverviewRequest;
 
 namespace EchoContent.Http.World
 {
-    public class TribeOverviewRequest : EchoTribeDeltaService
+    public class TribeOverviewRequest : EchoStreamedDataDeltaService<DbDino, TribeOverviewDino>
     {
         public TribeOverviewRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
         {
         }
 
-        public override async Task OnRequest()
+        public override IMongoCollection<DbDino> GetMongoCollection()
         {
-            //Get player profiles
-            var playerProfiles = await GetPlayerProfiles(server, tribeId);
-            List<TribeOverviewPlayer> responsePlayers = new List<TribeOverviewPlayer>();
-            foreach(var p in playerProfiles)
-            {
-                //Fetch steam data
-                DbSteamCache steamProfile = await Program.conn.GetSteamProfileById(p.steam_id);
-                if (steamProfile == null)
-                    continue;
-
-                //Add
-                responsePlayers.Add(new TribeOverviewPlayer
-                {
-                    steamId = steamProfile.steam_id,
-                    steamName = steamProfile.name,
-                    steamUrl = steamProfile.profile_url,
-                    img = steamProfile.icon_url,
-                    arkId = p.ark_id.ToString(),
-                    arkName = p.ig_name
-                });
-            }
-
-            //Get dino profiles
-            var dinoProfiles = await GetDinosaurs(server, tribeId);
-
-            //Get prefs
-            var massPrefs = await Program.conn.MassGetDinoPrefs(server, dinoProfiles);
-
-            List<TribeOverviewDino> dinos = new List<TribeOverviewDino>();
-            foreach(var p in dinoProfiles)
-            {
-                //Lookup dino entry for this
-                var entry = await package.GetDinoEntryByClssnameAsnyc(p.classname);
-                if (entry == null)
-                    continue;
-
-                //Get prefs
-                var prefs = massPrefs[p.dino_id];
-
-                //Convert
-                dinos.Add(new TribeOverviewDino
-                {
-                    classDisplayName = entry.screen_name,
-                    displayName = p.tamed_name,
-                    id = p.dino_id.ToString(),
-                    img = entry.icon.image_thumb_url,
-                    level = p.level,
-                    status = p.status,
-                    color_tag = prefs.color_tag,
-                    is_cryo = p.is_cryo,
-                    is_baby = p.is_baby,
-                    is_female = p.is_female
-                });
-            }
-
-            //Create a response
-            OverviewResponse response = new OverviewResponse
-            {
-                dinos = dinos,
-                tribemates = responsePlayers
-            };
-
-            //Write
-            await WriteJSON(response);
+            return conn.content_dinos;
         }
 
-        private static async Task<List<DbPlayerProfile>> GetPlayerProfiles(DbServer server, int? tribeId)
-        {
-            //Find all
-            var filterBuilder = Builders<DbPlayerProfile>.Filter;
-            var filter = FilterBuilderTool.CreateTribeFilter<DbPlayerProfile>(server, tribeId);
-            var response = await Program.conn.content_player_profiles.FindAsync(filter);
-            var profile = await response.ToListAsync();
-            return profile;
-        }
-
-        private static async Task<List<DbDino>> GetDinosaurs(DbServer server, int? tribeId)
+        public override FilterDefinition<DbDino> GetFilter()
         {
             var filterBuilder = Builders<DbDino>.Filter;
             var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderTool.CreateTribeFilter<DbDino>(server, tribeId);
-            var response = await Program.conn.content_dinos.FindAsync(filter);
-            var dino = await response.ToListAsync();
-            return dino;
+            return filter;
         }
 
-        class OverviewResponse
+        public override async Task<List<TribeOverviewDino>> ConvertDocuments(List<DbDino> resultsArray)
         {
-            public List<TribeOverviewPlayer> tribemates;
-            public List<TribeOverviewDino> dinos;
+            List<TribeOverviewDino> resultsConverted = new List<TribeOverviewDino>();
+            for (int i = 0; i < resultsArray.Count; i++)
+            {
+                var rd = await ConvertDocument(resultsArray[i]);
+                if (rd != null)
+                    resultsConverted.Add(rd);
+            }
+            return resultsConverted;
         }
 
-        class TribeOverviewPlayer
+        public async Task<TribeOverviewDino> ConvertDocument(DbDino p)
         {
-            public string arkName;
-            public string steamName;
-            public string arkId;
-            public string steamId;
-            public string steamUrl;
-            public string img;
+            //Lookup dino entry for this
+            var entry = await package.GetDinoEntryByClssnameAsnyc(p.classname);
+            if (entry == null)
+                return null;
+
+            //Convert
+            return new TribeOverviewDino
+            {
+                classDisplayName = entry.screen_name,
+                displayName = p.tamed_name,
+                id = p.dino_id.ToString(),
+                img = entry.icon.image_thumb_url,
+                level = p.level,
+                status = p.status,
+                color_tag = null,
+                is_cryo = p.is_cryo,
+                is_baby = p.is_baby,
+                is_female = p.is_female
+            };
         }
 
         public class TribeOverviewDino
