@@ -38,7 +38,6 @@ namespace EchoContent
             //Start server
             DeltaWebServer server = new DeltaWebServer(conn, config.port);
             server.AddService(new StructureMetadataDefinition());
-            server.AddService(new CreateSessionDefinition());
             server.AddService(new DinoInfoDefinition());
             server.AddService(new DinoListDefinition());
             server.AddService(new DinoYounglingsDefinition());
@@ -47,6 +46,8 @@ namespace EchoContent
             server.AddService(new TribeInfoDefinition());
             server.AddService(new TribeOverviewDefinition());
             server.AddService(new TribeStructuresDefinition());
+            server.AddService(new V2DinoSyncDefinition());
+            server.AddService(new V2SpeciesSyncDefinition());
             server.RunAsync().GetAwaiter().GetResult();
         }
 

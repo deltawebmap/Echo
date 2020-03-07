@@ -28,13 +28,6 @@ namespace EchoContent.Http.World
             EndDebugCheckpoint("Get structures");
             List<DbStructure> structures = await GetTribeStructures(server, tribeId);
 
-            //Create response template
-            ResponseData response = new ResponseData
-            {
-                i = new List<string>(),
-                s = new List<ResponseStructure>()
-            };
-
             //Sort
             EndDebugCheckpoint("Sort structures");
             structures.Sort(new Comparison<DbStructure>((x, y) =>
@@ -43,6 +36,33 @@ namespace EchoContent.Http.World
                     return x.has_inventory.CompareTo(y.has_inventory);
                 return x.location.z.CompareTo(y.location.z);
             }));
+
+            //Run response mode
+            if(e.Request.Query.ContainsKey("format"))
+            {
+                switch(e.Request.Query["format"])
+                {
+                    case "json": await RespondJSON(structures); break;
+                    case "binary": await RespondBinary(structures); break;
+                    default:
+                        await WriteString("Unknown format specified.", "text/plain", 400);
+                        return;
+                }
+            } else
+            {
+                //Default to json
+                await RespondJSON(structures);
+            }
+        }
+
+        private async Task RespondJSON(List<DbStructure> structures)
+        {
+            //Create response template
+            ResponseData response = new ResponseData
+            {
+                i = new List<string>(),
+                s = new List<ResponseStructure>()
+            };
 
             //Loop through structures and find where they are
             EndDebugCheckpoint("Lay out structures");
@@ -54,7 +74,7 @@ namespace EchoContent.Http.World
                 //Get image index
                 string img = metadata.img;
                 int index = response.i.IndexOf(img);
-                if(index == -1)
+                if (index == -1)
                 {
                     index = response.i.Count;
                     response.i.Add(img);
@@ -79,6 +99,65 @@ namespace EchoContent.Http.World
 
             //Write response
             await WriteJSON(response);
+        }
+        private async Task RespondBinary(List<DbStructure> structures)
+        {
+            //Binary mode writes out structures in binary structs
+
+            //HEADER FORMAT:
+            //  4   static  Signature, says "DWMS"
+            //  4   int32   File type version, should be 1
+            //  4   int32   Metadata version
+            //  4   int32   Structure count
+            //TOTAL: 16 bytes
+
+            //Struct format:
+            //  2   short   Metadata Index
+            //  2   short   Rotation (in degrees, 0-360)
+            //  4   float   Position X
+            //  4   float   Position Y
+            //  4   int     ID (0 = null)
+            //TOTAL: 16 bytes each
+
+            //Set headers
+            e.Response.ContentLength = (16 * structures.Count) + 16;
+            e.Response.ContentType = "application/octet-stream";
+            e.Response.StatusCode = 200;
+            EndDebugCheckpoint("Lay out structures");
+
+            //Create and send file header
+            byte[] buf = new byte[16];
+            buf[0] = 0x44;
+            buf[1] = 0x57;
+            buf[2] = 0x4D;
+            buf[3] = 0x53;
+            BinaryTool.WriteInt32(buf, 4, 1);
+            BinaryTool.WriteInt32(buf, 8, 0);
+            BinaryTool.WriteInt32(buf, 12, structures.Count);
+            e.Response.Body.Write(buf, 0, 16);
+
+            //Loop through structures and find where they are
+            foreach (var t in structures)
+            {
+                //Get data
+                StructureMetadata metadata = Program.conn.GetStructureMetadata().Where(x => x.names.Contains(t.classname)).FirstOrDefault();
+                int index = Program.conn.GetStructureMetadata().IndexOf(metadata);
+
+                //Get the ID. It's set only if this has an inventory
+                int sid = 0;
+                if (t.has_inventory)
+                    sid = t.structure_id;
+
+                //Write parts
+                BinaryTool.WriteInt16(buf, 0, (short)index);
+                BinaryTool.WriteInt16(buf, 2, (short)t.location.yaw);
+                BinaryTool.WriteFloat(buf, 4, t.location.x);
+                BinaryTool.WriteFloat(buf, 8, t.location.y);
+                BinaryTool.WriteInt32(buf, 12, sid);
+
+                //Write to stream
+                e.Response.Body.Write(buf, 0, 16);
+            }
         }
 
         private async Task<List<DbStructure>> GetTribeStructures(DbServer server, int? tribe_id)

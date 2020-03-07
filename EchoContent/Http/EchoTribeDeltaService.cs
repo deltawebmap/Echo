@@ -2,9 +2,7 @@
 using LibDeltaSystem.Entities.ArkEntries;
 using LibDeltaSystem.WebFramework.ServiceTemplates;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EchoContent.Http

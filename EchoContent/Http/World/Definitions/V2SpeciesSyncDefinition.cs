@@ -7,16 +7,16 @@ using System.Text;
 
 namespace EchoContent.Http.World.Definitions
 {
-    public class CreateSessionDefinition : DeltaWebServiceDefinition
+    public class V2SpeciesSyncDefinition : DeltaWebServiceDefinition
     {
         public override string GetTemplateUrl()
         {
-            return "/{SERVER}/create_session";
+            return "/species.json";
         }
 
         public override DeltaWebService OpenRequest(DeltaConnection conn, HttpContext e)
         {
-            return new CreateSessionRequest(conn, e);
+            return new V2SpeciesSyncRequest(conn, e);
         }
     }
 }
