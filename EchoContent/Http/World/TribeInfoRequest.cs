@@ -32,7 +32,6 @@ namespace EchoContent.Http.World
 
             //Add all types
             tribe.icons.AddRange(await CreateDinos());
-            tribe.icons.AddRange(await CreatePlayers());
 
             //Write
             await WriteJSON(tribe);
@@ -93,50 +92,6 @@ namespace EchoContent.Http.World
             }
 
             return dinos;
-        }
-
-        private async Task<List<MapIcon>> CreatePlayers()
-        {
-            //Find all dinosaurs
-            var filterBuilder = Builders<DbPlayerCharacter>.Filter;
-            var filter = FilterBuilderTool.CreateTribeFilter<DbPlayerCharacter>(server, tribeId);
-            var response = await Program.conn.content_player_characters.FindAsync(filter);
-            var responseList = await response.ToListAsync();
-
-            //Get all users on this server
-            var players = await server.GetPlayerProfiles(Program.conn);
-
-            //Convert all
-            List<MapIcon> output = new List<MapIcon>();
-            foreach (var player in responseList)
-            {
-                //Look up player data
-                var p = players.Where(x => x.ark_id == player.ark_id).FirstOrDefault();
-                if (p == null)
-                    continue;
-
-                //Look up Steam info
-                var steamInfo = await Program.conn.GetSteamProfileById(p.steam_id);
-                
-                //Add
-                output.Add(new MapIcon
-                {
-                    location = new DbLocation(player.pos.x, player.pos.y, player.pos.z),
-                    img = steamInfo.icon_url,
-                    type = "players",
-                    id = p.ark_id.ToString(),
-                    outline_color = null,
-                    tag_color = null,
-                    dialog = new MapIconHoverDialog
-                    {
-                        title = steamInfo.name,
-                        subtitle = "ID "+p.ark_id
-                    },
-                    extras = null
-                });
-            }
-
-            return output;
         }
 
         class ResponseTribe

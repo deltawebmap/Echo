@@ -45,9 +45,11 @@ namespace EchoContent
             server.AddService(new StructureInfoDefinition());
             server.AddService(new TribeInfoDefinition());
             server.AddService(new TribeOverviewDefinition());
-            server.AddService(new TribeStructuresDefinition());
+            //server.AddService(new TribeStructuresDefinition());
             server.AddService(new V2DinoSyncDefinition());
             server.AddService(new V2SpeciesSyncDefinition());
+            server.AddService(new V2StructuresSyncDefinition());
+            server.AddService(new V2InventoriesSyncDefinition());
             server.RunAsync().GetAwaiter().GetResult();
         }
 

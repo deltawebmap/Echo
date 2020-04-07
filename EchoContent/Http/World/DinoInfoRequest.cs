@@ -41,7 +41,7 @@ namespace EchoContent.Http.World
             DbDino dino = await GetDinosaur(dino_id);
 
             //Get dino prefs
-            var prefs = await dino.GetPrefs(Program.conn);
+            var prefs = dino.prefs;
 
             //Get dinosaur entry
             DinosaurEntry dinoEntry = await package.GetDinoEntryByClssnameAsnyc(dino.classname);
