@@ -39,12 +39,8 @@ namespace EchoContent.Http.World
             DbStructure structure = await DbStructure.GetStructureByID(Program.conn, structure_id, server);
             if (structure == null)
                 throw new StandardError("This structure does not exist.", "This ID is not valid.", 400);
-            if (structure.tribe_id != tribeId && tribeId.HasValue)
+            if (CheckIfTribeIdAllowed(structure.tribe_id))
                 throw new StandardError("This structure does not belong to you.", "You may not access this structure.", 400);
-
-            //Get structure items and inventory
-            List<DbItem> items = await structure.GetItems(Program.conn, server);
-            WebInventory inventory = await Tools.InventoryTool.GetWebInventory(items, package, server, tribeId);
 
             //Attempt to get info about this structure
             string name = structure.classname;
@@ -70,7 +66,6 @@ namespace EchoContent.Http.World
             ResponseStructure response = new ResponseStructure
             {
                 id = structure.structure_id,
-                inventory = inventory,
                 location = structure.location,
                 current_item_count = structure.current_item_count,
                 max_item_count = structure.max_item_count,

@@ -34,7 +34,7 @@ namespace EchoContent.Http.World
         public override FilterDefinition<DbStructure> GetFilterDefinition(DateTime epoch)
         {
             var filterBuilder = Builders<DbStructure>.Filter;
-            var filter = FilterBuilderToolDb.CreateTribeFilter<DbStructure>(server, tribeId);
+            var filter = GetServerTribeFilter<DbStructure>();
             return filter;
         }
 

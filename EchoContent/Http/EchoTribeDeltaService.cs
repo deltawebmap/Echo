@@ -19,17 +19,6 @@ namespace EchoContent.Http
         {
         }
 
-        public override async Task<bool> CheckIfTribeIdAllowed(int? tribeId)
-        {
-            //Check actual tribe
-            int? actualTribe = await server.TryGetTribeIdAsync(conn, user.steam_id);
-            if (tribeId.HasValue && actualTribe == tribeId)
-                return true;
-
-            //For users to request other tribes or a null tribe, they must have admin access. Check
-            return server.CheckIsUserAdmin(user);
-        }
-
         public override async Task<bool> SetArgs(Dictionary<string, string> args)
         {
             if (!await base.SetArgs(args))
@@ -40,11 +29,11 @@ namespace EchoContent.Http
 
             //Get this map from the maps
             mapInfo = await server.GetMapEntryAsync(conn);
-            if (mapInfo == null)
+            /*if (mapInfo == null)
             {
                 await WriteString("The map this server is using is not supported.", "text/plain", 400);
                 return false;
-            }
+            }*/
 
             return true;
         }

@@ -25,7 +25,7 @@ namespace EchoContent.Http.World
         public override FilterDefinition<DbDino> GetFilterDefinition(DateTime epoch)
         {
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId);
+            var filter = filterBuilder.Eq("is_tamed", true) & GetServerTribeFilter<DbDino>();
             return filter;
         }
 

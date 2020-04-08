@@ -27,7 +27,7 @@ namespace EchoContent.Http.World
         public override FilterDefinition<DbInventory> GetFilterDefinition(DateTime epoch)
         {
             var filterBuilder = Builders<DbInventory>.Filter;
-            var filter = FilterBuilderToolDb.CreateTribeFilter<DbInventory>(server, tribeId);
+            var filter = GetServerTribeFilter<DbInventory>();
             return filter;
         }
 

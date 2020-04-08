@@ -31,7 +31,7 @@ namespace EchoContent.Http.World
         private async Task<List<EggResponseData>> GetEggs()
         {
             //Get all eggs
-            var eggs = await DbEgg.GetTribeEggs(Program.conn, server, tribeId);
+            var eggs = await DbEgg.GetEggs(conn, GetServerTribeFilter<DbEgg>());
 
             //Convert all eggs
             List<EggResponseData> output = new List<EggResponseData>();

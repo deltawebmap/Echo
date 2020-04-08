@@ -167,7 +167,7 @@ namespace EchoContent.Http.World
 
             //Commit query
             var filterBuilder = Builders<DbStructure>.Filter;
-            var filter = FilterBuilderToolDb.CreateTribeFilter<DbStructure>(server, tribe_id) &
+            var filter = GetServerTribeFilter<DbStructure>() &
                 filterBuilder.In("classname", metadata) & filterBuilder.And(BuildFilters());
             var results = await conn.content_structures.FindAsync(filter);
             return await results.ToListAsync();

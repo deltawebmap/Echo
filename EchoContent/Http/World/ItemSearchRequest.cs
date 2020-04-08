@@ -230,7 +230,7 @@ namespace EchoContent.Http.World
         {
             var sortBuilder = Builders<DbItem>.Sort;
             var filterBuilder = Builders<DbItem>.Filter;
-            var filter = FilterBuilderTool.CreateTribeFilter<DbItem>(server, tribeId) & filterBuilder.Regex("entry_display_name", $"(?i)({Regex.Escape(query)})");
+            var filter = GetServerTribeFilter<DbItem>() & filterBuilder.Regex("entry_display_name", $"(?i)({Regex.Escape(query)})");
             var response = await Program.conn.content_items.FindAsync(filter, new FindOptions<DbItem, DbItem>
             {
                 Limit = limit,

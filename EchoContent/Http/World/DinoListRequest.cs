@@ -36,7 +36,7 @@ namespace EchoContent.Http.World
 
             //Find
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = filterBuilder.Eq("is_tamed", true) & FilterBuilderToolDb.CreateTribeFilter<DbDino>(server, tribeId);
+            var filter = filterBuilder.Eq("is_tamed", true) & GetServerTribeFilter<DbDino>();
             var response = await Program.conn.content_dinos.FindAsync(filter, new FindOptions<DbDino, DbDino>
             {
                 Limit = limit,

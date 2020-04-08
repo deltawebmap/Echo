@@ -50,7 +50,7 @@ namespace EchoContent.Http.World
         {
             //Find all dinosaurs
             var filterBuilder = Builders<DbDino>.Filter;
-            var filter = FilterBuilderTool.CreateTribeFilter<DbDino>(server, tribeId) & filterBuilder.Eq("is_cryo", false);
+            var filter = GetServerTribeFilter<DbDino>() & filterBuilder.Eq("is_cryo", false);
             var response = await Program.conn.content_dinos.FindAsync(filter);
             var responseList = await response.ToListAsync();
 
