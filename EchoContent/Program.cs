@@ -1,4 +1,5 @@
-﻿using EchoContent.Http.World.Definitions;
+﻿using EchoContent.Http.Charlie.Definitions;
+using EchoContent.Http.World.Definitions;
 using LibDeltaSystem;
 using LibDeltaSystem.Db.Content;
 using LibDeltaSystem.WebFramework;
@@ -41,6 +42,7 @@ namespace EchoContent
             server.AddService(new DinoYounglingsDefinition());
             server.AddService(new V2DinoSyncDefinition());
             server.AddService(new V2SpeciesSyncDefinition());
+            server.AddService(new V2ItemDefinitionsSyncDefinition());
             server.AddService(new V2StructuresSyncDefinition());
             server.AddService(new V2InventoriesSyncDefinition());
             server.RunAsync().GetAwaiter().GetResult();

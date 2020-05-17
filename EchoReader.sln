@@ -1,12 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2046
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EchoReader", "EchoReader\EchoReader.csproj", "{86177333-8059-41B9-8425-0B7948686871}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArkSaveEditor", "ArkSaveEditor\ArkSaveEditor.csproj", "{D2B6025E-3A5B-443A-8119-E374B50C35E9}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EchoContent", "EchoContent\EchoContent.csproj", "{86F32C4A-1A4F-40CD-92D5-C0B322763654}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibDeltaSystem", "..\LibDeltaSystem\LibDeltaSystem\LibDeltaSystem.csproj", "{0D103BD2-AEFB-4EC2-B1F6-4971E921FD8F}"
@@ -17,14 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{86177333-8059-41B9-8425-0B7948686871}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{86177333-8059-41B9-8425-0B7948686871}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{86177333-8059-41B9-8425-0B7948686871}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{86177333-8059-41B9-8425-0B7948686871}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D2B6025E-3A5B-443A-8119-E374B50C35E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D2B6025E-3A5B-443A-8119-E374B50C35E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D2B6025E-3A5B-443A-8119-E374B50C35E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D2B6025E-3A5B-443A-8119-E374B50C35E9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{86F32C4A-1A4F-40CD-92D5-C0B322763654}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{86F32C4A-1A4F-40CD-92D5-C0B322763654}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86F32C4A-1A4F-40CD-92D5-C0B322763654}.Release|Any CPU.ActiveCfg = Release|Any CPU

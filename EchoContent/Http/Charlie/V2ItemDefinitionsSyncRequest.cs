@@ -2,7 +2,6 @@
 using LibDeltaSystem.Db.ArkEntries;
 using LibDeltaSystem.Entities.ArkEntries.Dinosaur;
 using LibDeltaSystem.Tools.DeltaWebFormat;
-using LibDeltaSystem.WebFramework;
 using Microsoft.AspNetCore.Http;
 using MongoDB.Driver;
 using System;
@@ -11,28 +10,28 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EchoContent.Http.World
+namespace EchoContent.Http.Charlie
 {
-    public class V2SpeciesSyncRequest : V2SyncDeltaService<DbArkEntry<DinosaurEntry>, DinosaurEntry>
+    public class V2ItemDefinitionsSyncRequest : V2SyncDeltaService<DbArkEntry<ItemEntry>, ItemEntry>
     {
-        public V2SpeciesSyncRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
+        public V2ItemDefinitionsSyncRequest(DeltaConnection conn, HttpContext e) : base(conn, e)
         {
         }
 
-        public override DinosaurEntry ConvertToOutputType(DbArkEntry<DinosaurEntry> data)
+        public override ItemEntry ConvertToOutputType(DbArkEntry<ItemEntry> data)
         {
             return data.data;
         }
 
-        public override FilterDefinition<DbArkEntry<DinosaurEntry>> GetFilterDefinition(DateTime epoch)
+        public override FilterDefinition<DbArkEntry<ItemEntry>> GetFilterDefinition(DateTime epoch)
         {
-            var filterBuilder = Builders<DbArkEntry<DinosaurEntry>>.Filter;
+            var filterBuilder = Builders<DbArkEntry<ItemEntry>>.Filter;
             return filterBuilder.Gt("time", epoch);
         }
 
-        public override IMongoCollection<DbArkEntry<DinosaurEntry>> GetMongoCollection()
+        public override IMongoCollection<DbArkEntry<ItemEntry>> GetMongoCollection()
         {
-            return conn.arkentries_dinos;
+            return conn.arkentries_items;
         }
 
         public override async Task<bool> OnPreRequest()
@@ -47,7 +46,7 @@ namespace EchoContent.Http.World
             return true;
         }
 
-        public override async Task WriteResponse(List<DbArkEntry<DinosaurEntry>> adds, List<DbArkEntry<DinosaurEntry>> removes, int epoch, string format)
+        public override async Task WriteResponse(List<DbArkEntry<ItemEntry>> adds, List<DbArkEntry<ItemEntry>> removes, int epoch, string format)
         {
             if (format == "json")
                 await WriteJSONResponse(adds, removes, epoch);
@@ -57,7 +56,7 @@ namespace EchoContent.Http.World
                 await ExitInvalidFormat("json", "binary");
         }
 
-        public async Task WriteBinaryResponse(List<DbArkEntry<DinosaurEntry>> adds, List<DbArkEntry<DinosaurEntry>> removes, int epoch)
+        public async Task WriteBinaryResponse(List<DbArkEntry<ItemEntry>> adds, List<DbArkEntry<ItemEntry>> removes, int epoch)
         {
             //Convert
             var addsConverted = MassConvertObjects(adds);
@@ -65,7 +64,7 @@ namespace EchoContent.Http.World
             using (MemoryStream ms = new MemoryStream())
             {
                 //Encode
-                DeltaWebFormatEncoder<DinosaurEntry> encoder = new LibDeltaSystem.Tools.DeltaWebFormat.DeltaWebFormatEncoder<DinosaurEntry>(ms);
+                DeltaWebFormatEncoder<ItemEntry> encoder = new LibDeltaSystem.Tools.DeltaWebFormat.DeltaWebFormatEncoder<ItemEntry>(ms);
                 try
                 {
                     encoder.Encode(addsConverted, new Dictionary<byte, byte[]>()
