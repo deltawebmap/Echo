@@ -38,12 +38,18 @@ namespace EchoContent.Http.World
 
         public override async Task WriteResponse(List<DbInventory> adds, List<DbInventory> removes, int epoch, string format)
         {
-            if (format == "json")
-                await WriteJSONResponse(adds, removes, epoch);
-            else if (format == "binary")
-                await WriteBinaryResponse(adds, removes, epoch);
-            else
-                await ExitInvalidFormat("json", "binary");
+            try
+            {
+                if (format == "json")
+                    await WriteJSONResponse(adds, removes, epoch);
+                else if (format == "binary")
+                    await WriteBinaryResponse(adds, removes, epoch);
+                else
+                    await ExitInvalidFormat("json", "binary");
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + ex.StackTrace);
+            }
         }
 
         public async Task WriteBinaryResponse(List<DbInventory> adds, List<DbInventory> removes, int epoch)
@@ -109,7 +115,7 @@ namespace EchoContent.Http.World
             }
 
             //Create and send file header
-            byte[] buf = new byte[16384];
+            byte[] buf = new byte[32768];
             buf[0] = 0x44;
             buf[1] = 0x57;
             buf[2] = 0x4D;
@@ -141,7 +147,7 @@ namespace EchoContent.Http.World
             foreach(var inventory in inventories)
             {
                 //Create header
-                BinaryTool.WriteInt64(buf, 0, inventory.holder_id);
+                BinaryTool.WriteUInt64(buf, 0, inventory.holder_id);
                 buf[8] = (byte)inventory.holder_type;
                 BinaryTool.WriteInt16(buf, 9, (short)inventory.items.Length);
                 BinaryTool.WriteInt32(buf, 11, inventory.tribe_id);
@@ -151,7 +157,7 @@ namespace EchoContent.Http.World
                 foreach(var i in inventory.items)
                 {
                     //Create header
-                    BinaryTool.WriteInt64(buf, offset, i.item_id);
+                    BinaryTool.WriteUInt64(buf, offset, i.item_id);
                     BinaryTool.WriteInt32(buf, offset + 8, names.IndexOf(i.classname));
                     BinaryTool.WriteFloat(buf, offset + 12, i.durability);
                     BinaryTool.WriteInt16(buf, offset + 16, (short)i.stack_size);
@@ -172,6 +178,7 @@ namespace EchoContent.Http.World
 
                 //Send data
                 await e.Response.Body.WriteAsync(buf, 0, offset);
+                offset = 0;
             }
         }
     }

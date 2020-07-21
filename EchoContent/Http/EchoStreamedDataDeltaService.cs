@@ -28,11 +28,9 @@ namespace EchoContent.Http
             var filter = GetFilter();
 
             //Find a count of all returned results
-            EndDebugCheckpoint("Get document count");
             long resultCount = await collec.CountDocumentsAsync(filter);
 
             //Now, query matching results
-            EndDebugCheckpoint("Get documents");
             var results = await collec.FindAsync(filter, new FindOptions<T, T>
             {
                 Limit = limit,
@@ -41,7 +39,6 @@ namespace EchoContent.Http
             var resultsArray = await results.ToListAsync();
 
             //Convert all of these into a valid document
-            EndDebugCheckpoint("Convert documents");
             List<R> resultsConverted = await ConvertDocuments(resultsArray);
 
             //Create response data

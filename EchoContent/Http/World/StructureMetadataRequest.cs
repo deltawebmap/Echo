@@ -21,7 +21,7 @@ namespace EchoContent.Http.World
             await WriteJSON(new MetadataResponse
             {
                 metadata = Program.conn.GetStructureMetadata(),
-                image_url = Program.config.endpoint_structure_images
+                image_url = "https://icon-assets.deltamap.net/structures.png"
             });
         }
 

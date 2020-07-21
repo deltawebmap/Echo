@@ -18,26 +18,15 @@ namespace EchoContent
 {
     class Program
     {
-        public static Random rand;
         public static DeltaConnection conn;
-        public static EchoReaderConfig config;
-
-        public static string ROOT_URL { get { return conn.config.hosts.echo; } }
 
         static void Main(string[] args)
         {
-            //Read config
-            config = JsonConvert.DeserializeObject<EchoReaderConfig>(File.ReadAllText(args[0]));
-
-            //Init everything
-            rand = new Random();
-
             //Connect to database
-            conn = new DeltaConnection(config.database_config_file, "echo-content", 0, 0);
-            conn.Connect().GetAwaiter().GetResult();
+            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 2, new EchoContentCoreNetwork());
 
             //Start server
-            DeltaWebServer server = new DeltaWebServer(conn, config.port);
+            DeltaWebServer server = new DeltaWebServer(conn, conn.GetUserPort(0));
             server.AddService(new StructureMetadataDefinition());
             server.AddService(new DinoYounglingsDefinition());
             server.AddService(new V2DinoSyncDefinition());
@@ -46,60 +35,6 @@ namespace EchoContent
             server.AddService(new V2StructuresSyncDefinition());
             server.AddService(new V2InventoriesSyncDefinition());
             server.RunAsync().GetAwaiter().GetResult();
-        }
-
-        public static Task QuickWriteToDoc(Microsoft.AspNetCore.Http.HttpContext context, string content, string type = "text/html", int code = 200)
-        {
-            var response = context.Response;
-            response.StatusCode = code;
-            response.ContentType = type;
-
-            //Load the template.
-            string html = content;
-            var data = Encoding.UTF8.GetBytes(html);
-            response.ContentLength = data.Length;
-            return response.Body.WriteAsync(data, 0, data.Length);
-        }
-
-        public static string GetPostBodyString(Microsoft.AspNetCore.Http.HttpContext context)
-        {
-            string buffer;
-            using (StreamReader sr = new StreamReader(context.Request.Body))
-                buffer = sr.ReadToEnd();
-
-            return buffer;
-        }
-
-        public static Task QuickWriteJsonToDoc<T>(Microsoft.AspNetCore.Http.HttpContext context, T data, int code = 200)
-        {
-            return QuickWriteToDoc(context, JsonConvert.SerializeObject(data, Formatting.Indented), "application/json", code);
-        }
-
-        public static string GenerateRandomString(int length)
-        {
-            return GenerateRandomStringCustom(length, "qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM".ToCharArray());
-        }
-
-        public static string GenerateRandomStringCustom(int length, char[] chars)
-        {
-            string output = "";
-            for (int i = 0; i < length; i++)
-            {
-                output += chars[rand.Next(0, chars.Length)];
-            }
-            return output;
-        }
-
-        public static byte[] GenerateRandomBytes(int length)
-        {
-            byte[] buf = new byte[length];
-            rand.NextBytes(buf);
-            return buf;
-        }
-
-        public static RequestHttpMethod FindRequestMethod(Microsoft.AspNetCore.Http.HttpContext context)
-        {
-            return Enum.Parse<RequestHttpMethod>(context.Request.Method.ToLower());
         }
     }
 
