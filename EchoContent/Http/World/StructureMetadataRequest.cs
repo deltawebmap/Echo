@@ -1,5 +1,5 @@
 ﻿using LibDeltaSystem;
-using LibDeltaSystem.Entities.DynamicTiles;
+using LibDeltaSystem.Entities;
 using LibDeltaSystem.WebFramework.ServiceTemplates;
 using Microsoft.AspNetCore.Http;
 using System;
