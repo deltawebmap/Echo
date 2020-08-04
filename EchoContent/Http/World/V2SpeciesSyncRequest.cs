@@ -47,17 +47,17 @@ namespace EchoContent.Http.World
             return true;
         }
 
-        public override async Task WriteResponse(List<DbArkEntry<DinosaurEntry>> adds, List<DbArkEntry<DinosaurEntry>> removes, int epoch, string format)
+        public override async Task WriteResponse(List<DbArkEntry<DinosaurEntry>> adds, int epoch, string format)
         {
             if (format == "json")
-                await WriteJSONResponse(adds, removes, epoch);
+                await WriteJSONResponse(adds, epoch);
             else if (format == "binary")
-                await WriteBinaryResponse(adds, removes, epoch);
+                await WriteBinaryResponse(adds, epoch);
             else
                 await ExitInvalidFormat("json", "binary");
         }
 
-        public async Task WriteBinaryResponse(List<DbArkEntry<DinosaurEntry>> adds, List<DbArkEntry<DinosaurEntry>> removes, int epoch)
+        public async Task WriteBinaryResponse(List<DbArkEntry<DinosaurEntry>> adds, int epoch)
         {
             //Convert
             var addsConverted = MassConvertObjects(adds);

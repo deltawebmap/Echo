@@ -22,31 +22,45 @@ namespace EchoContent.Http
 
         public override async Task OnRequest()
         {
-            //Parse epoch
-            DateTime epoch = masterEpoch;
-            if(e.Request.Query.ContainsKey("last_epoch"))
-            {
-                if(!long.TryParse(e.Request.Query["last_epoch"], out long epochTime))
-                {
-                    await WriteString("last_epoch is not a valid epoch!", "text/plain", 400);
-                    return;
-                }
-                epoch = masterEpoch.AddSeconds(epochTime);
-            }
-
-            //Find
+            //Get collection
+            var collection = GetMongoCollection();
+            var filter = GetFilterDefinition(DateTime.MinValue);
             int returnEpoch = (int)(DateTime.UtcNow - masterEpoch).TotalSeconds;
-            var filter = GetFilterDefinition(epoch);
-            var response = await GetMongoCollection().FindAsync(filter);
-            var responseList = await response.ToListAsync();
 
             //Get requested format
             string format = "json";
             if (e.Request.Query.ContainsKey("format"))
                 format = e.Request.Query["format"];
 
+            //Write headers
+            long count = await collection.CountDocumentsAsync(filter);
+            e.Response.Headers.Add("X-Delta-Sync-TotalItems", count.ToString());
+
+            //Check if this is counts only. If it is, we're done already
+            if(format == "counts_only")
+            {
+                await WriteJSON(new CountsResponseData
+                {
+                    epoch = returnEpoch,
+                    count = count
+                });
+                return;
+            }
+            
+            //Get URL params
+            int skip = GetIntFromQuery("skip", 0);
+            int limit = GetIntFromQuery("limit", int.MaxValue);
+
+            //Find
+            var response = await GetMongoCollection().FindAsync(filter, new FindOptions<T, T>
+            {
+                Limit = limit,
+                Skip = skip
+            });
+            var responseList = await response.ToListAsync();
+
             //Write
-            await WriteResponse(responseList, new List<T>(), returnEpoch, format);
+            await WriteResponse(responseList, returnEpoch, format);
         }
 
         public abstract IMongoCollection<T> GetMongoCollection();
@@ -55,7 +69,7 @@ namespace EchoContent.Http
 
         public abstract O ConvertToOutputType(T data);
 
-        public virtual async Task WriteResponse(List<T> adds, List<T> removes, int epoch, string format)
+        public virtual async Task WriteResponse(List<T> adds, int epoch, string format)
         {
             //Verify JSON response
             if(format != "json")
@@ -63,16 +77,15 @@ namespace EchoContent.Http
                 await ExitInvalidFormat("json");
                 return;
             }
-            await WriteJSONResponse(adds, removes, epoch);
+            await WriteJSONResponse(adds, epoch);
         }
 
-        public async Task WriteJSONResponse(List<T> adds, List<T> removes, int epoch)
+        public async Task WriteJSONResponse(List<T> adds, int epoch)
         {
             //Create response template
             ResponseData r = new ResponseData
             {
-                adds = MassConvertObjects(adds),
-                removes = MassConvertObjects(removes),
+                content = MassConvertObjects(adds),
                 epoch = epoch
             };
 
@@ -82,7 +95,7 @@ namespace EchoContent.Http
 
         public async Task ExitInvalidFormat(params string[] formats)
         {
-            await WriteString("Invalid format. Valid formats are: " + JsonConvert.SerializeObject(formats), "text/plain", 400);
+            await WriteString("Invalid format. Valid formats are: " + JsonConvert.SerializeObject(formats) + ". Or, you can use 'counts_only'.", "text/plain", 400);
         }
 
         public List<O> MassConvertObjects(List<T> objects)
@@ -95,8 +108,13 @@ namespace EchoContent.Http
 
         class ResponseData
         {
-            public List<O> adds;
-            public List<O> removes;
+            public List<O> content;
+            public int epoch;
+        }
+
+        class CountsResponseData
+        {
+            public long count;
             public int epoch;
         }
     }

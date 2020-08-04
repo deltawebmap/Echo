@@ -43,17 +43,17 @@ namespace EchoContent.Http.World
             return conn.content_structures;
         }
 
-        public override async Task WriteResponse(List<DbStructure> adds, List<DbStructure> removes, int epoch, string format)
+        public override async Task WriteResponse(List<DbStructure> adds, int epoch, string format)
         {
             if (format == "json")
-                await WriteJSONResponse(adds, removes, epoch);
+                await WriteJSONResponse(adds, epoch);
             else if (format == "binary")
-                await WriteBinaryResponse(adds, removes, epoch);
+                await WriteBinaryResponse(adds);
             else
                 await ExitInvalidFormat("json", "binary");
         }
 
-        public async Task WriteBinaryResponse(List<DbStructure> adds, List<DbStructure> removes, int epoch)
+        public async Task WriteBinaryResponse(List<DbStructure> structures)
         {
             //Binary mode writes out structures in binary structs
 
@@ -90,11 +90,6 @@ namespace EchoContent.Http.World
             //6: RESERVED
             //7: RESERVED
 
-            //Combine structures
-            List<DbStructure> structures = new List<DbStructure>();
-            structures.AddRange(adds);
-            structures.AddRange(removes);
-
             //Set headers
             e.Response.ContentLength = (24 * structures.Count) + 32;
             e.Response.ContentType = "application/octet-stream";
@@ -110,7 +105,7 @@ namespace EchoContent.Http.World
             BinaryTool.WriteInt32(buf, 8, 0);
             BinaryTool.WriteInt32(buf, 12, structures.Count);
 
-            BinaryTool.WriteInt32(buf, 16, epoch);
+            BinaryTool.WriteInt32(buf, 16, 0); //Was epoch, now unused
             BinaryTool.WriteInt32(buf, 20, 0);
             BinaryTool.WriteInt32(buf, 24, 0);
             BinaryTool.WriteInt32(buf, 28, 0);
@@ -128,8 +123,6 @@ namespace EchoContent.Http.World
                 byte flags = 0;
                 if(t.has_inventory)
                     flags |= 0x01 << 0;
-                if (removes.Contains(t))
-                    flags |= 0x01 << 1; //This is a remove, not an add
 
                 //Write parts
                 BinaryTool.WriteInt16(buf, 0, (short)index);

@@ -35,23 +35,17 @@ namespace EchoContent.Http.World
             return conn.content_inventories;
         }
 
-        public override async Task WriteResponse(List<DbInventory> adds, List<DbInventory> removes, int epoch, string format)
+        public override async Task WriteResponse(List<DbInventory> adds, int epoch, string format)
         {
-            try
-            {
-                if (format == "json")
-                    await WriteJSONResponse(adds, removes, epoch);
-                else if (format == "binary")
-                    await WriteBinaryResponse(adds, removes, epoch);
-                else
-                    await ExitInvalidFormat("json", "binary");
-            } catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + ex.StackTrace);
-            }
+            if (format == "json")
+                await WriteJSONResponse(adds, epoch);
+            else if (format == "binary")
+                await WriteBinaryResponse(adds);
+            else
+                await ExitInvalidFormat("json", "binary");
         }
 
-        public async Task WriteBinaryResponse(List<DbInventory> adds, List<DbInventory> removes, int epoch)
+        public async Task WriteBinaryResponse(List<DbInventory> inventories)
         {
             //Binary mode writes out structures in binary structs
             //In format header, name table, inventory struct
@@ -93,11 +87,6 @@ namespace EchoContent.Http.World
             //  2   int16   String length
             //  ?   string  Data
 
-            //Combine items
-            List<DbInventory> inventories = new List<DbInventory>();
-            inventories.AddRange(adds);
-            inventories.AddRange(removes);
-
             //Set headers
             e.Response.ContentType = "application/octet-stream";
             e.Response.StatusCode = 200;
@@ -122,7 +111,7 @@ namespace EchoContent.Http.World
             BinaryTool.WriteInt32(buf, 4, 1); //Version tag
             BinaryTool.WriteInt32(buf, 8, 0);
             BinaryTool.WriteInt32(buf, 12, inventories.Count);
-            BinaryTool.WriteInt32(buf, 16, epoch);
+            BinaryTool.WriteInt32(buf, 16, 0); //Was epoch, now unused
             BinaryTool.WriteInt32(buf, 20, names.Count);
             BinaryTool.WriteInt32(buf, 24, 0);
             BinaryTool.WriteInt32(buf, 28, 0);

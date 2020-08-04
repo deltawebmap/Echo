@@ -2,7 +2,7 @@
   "profiles": {
     "EchoContent": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Roman\\Documents\\delta_dev\\backend\\echo_read\\echo_config.json"
+      "commandLineArgs": "C:\\Users\\Roman\\Documents\\DeltaWebMap\\database_config.json 2"
     }
   }
 }

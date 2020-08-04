@@ -11,7 +11,7 @@ namespace EchoContent.Http.World.Definitions
     {
         public override string GetTemplateUrl()
         {
-            return "/{SERVER}/tribes/{TRIBE}/inventories";
+            return "/v1/{SERVER}/inventories";
         }
 
         public override DeltaWebService OpenRequest(DeltaConnection conn, HttpContext e)

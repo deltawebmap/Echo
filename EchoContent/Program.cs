@@ -23,12 +23,12 @@ namespace EchoContent
         static void Main(string[] args)
         {
             //Connect to database
-            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 2, new EchoContentCoreNetwork());
+            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 3, new EchoContentCoreNetwork());
 
             //Start server
             DeltaWebServer server = new DeltaWebServer(conn, conn.GetUserPort(0));
+            server.exposedHeaders.Add("X-Delta-Sync-TotalItems");
             server.AddService(new StructureMetadataDefinition());
-            server.AddService(new DinoYounglingsDefinition());
             server.AddService(new V2DinoSyncDefinition());
             server.AddService(new V2SpeciesSyncDefinition());
             server.AddService(new V2ItemDefinitionsSyncDefinition());

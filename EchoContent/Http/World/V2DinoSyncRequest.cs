@@ -36,17 +36,17 @@ namespace EchoContent.Http.World
             return conn.content_dinos;
         }
 
-        public override async Task WriteResponse(List<DbDino> adds, List<DbDino> removes, int epoch, string format)
+        public override async Task WriteResponse(List<DbDino> adds, int epoch, string format)
         {
             if (format == "json")
-                await WriteJSONResponse(adds, removes, epoch);
+                await WriteJSONResponse(adds, epoch);
             else if (format == "binary")
-                await WriteBinaryResponse(adds, removes, epoch);
+                await WriteBinaryResponse(adds);
             else
                 await ExitInvalidFormat("json", "binary");
         }
 
-        public async Task WriteBinaryResponse(List<DbDino> adds, List<DbDino> removes, int epoch)
+        public async Task WriteBinaryResponse(List<DbDino> adds)
         {
             //Convert
             var addsConverted = MassConvertObjects(adds);
