@@ -49,12 +49,12 @@ namespace EchoContent.Http.World
         public async Task WriteBinaryResponse(List<DbDino> adds)
         {
             //Convert
-            var addsConverted = MassConvertObjects(adds);
+            var addsConverted = MassConvertObjects(adds).ToArray();
 
             using(MemoryStream ms = new MemoryStream())
             {
                 //Encode
-                DeltaWebFormatEncoder<NetDino> encoder = new LibDeltaSystem.Tools.DeltaWebFormat.DeltaWebFormatEncoder<NetDino>(ms);
+                DeltaWebFormatEncoder encoder = new LibDeltaSystem.Tools.DeltaWebFormat.DeltaWebFormatEncoder(ms, typeof(NetDino));
                 try
                 {
                     encoder.Encode(addsConverted, new Dictionary<byte, byte[]>());
