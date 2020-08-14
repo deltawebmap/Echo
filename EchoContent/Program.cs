@@ -22,7 +22,7 @@ namespace EchoContent
         static void Main(string[] args)
         {
             //Connect to database
-            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 4, new EchoContentCoreNetwork());
+            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 5, new EchoContentCoreNetwork());
 
             //Start server
             DeltaWebServer server = new DeltaWebServer(conn, conn.GetUserPort(0));
@@ -31,6 +31,7 @@ namespace EchoContent
             server.AddService(new V2DinoSyncDefinition());
             server.AddService(new V2StructuresSyncDefinition());
             server.AddService(new V2InventoriesSyncDefinition());
+            server.AddService(new WorldPlayerListDefinition());
             server.RunAsync().GetAwaiter().GetResult();
         }
     }
