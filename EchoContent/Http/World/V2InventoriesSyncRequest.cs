@@ -108,7 +108,7 @@ namespace EchoContent.Http.World
             buf[1] = 0x57;
             buf[2] = 0x4D;
             buf[3] = 0x49;
-            BinaryTool.WriteInt32(buf, 4, 1); //Version tag
+            BinaryTool.WriteInt32(buf, 4, 2); //Version tag
             BinaryTool.WriteInt32(buf, 8, 0);
             BinaryTool.WriteInt32(buf, 12, inventories.Count);
             BinaryTool.WriteInt32(buf, 16, 0); //Was epoch, now unused
@@ -156,11 +156,17 @@ namespace EchoContent.Http.World
                     //Write custom datas
                     foreach(var c in i.custom_data)
                     {
-                        BinaryTool.WriteInt16(buf, offset, (short)c.Key);
-                        byte[] d = Encoding.UTF8.GetBytes(c.Value);
-                        BinaryTool.WriteInt16(buf, offset + 2, (short)d.Length);
-                        Array.Copy(d, 0, buf, offset + 4, d.Length);
-                        offset += d.Length + 4;
+                        //Write key
+                        byte[] d = Encoding.UTF8.GetBytes(c.Key);
+                        BinaryTool.WriteInt16(buf, offset, (short)d.Length);
+                        Array.Copy(d, 0, buf, offset + 2, d.Length);
+                        offset += 2 + d.Length;
+
+                        //Write value
+                        d = Encoding.UTF8.GetBytes(c.Value);
+                        BinaryTool.WriteInt16(buf, offset, (short)d.Length);
+                        Array.Copy(d, 0, buf, offset + 2, d.Length);
+                        offset += 2 + d.Length;
                     }
                 }
 
