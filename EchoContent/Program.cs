@@ -22,7 +22,7 @@ namespace EchoContent
         static void Main(string[] args)
         {
             //Connect to database
-            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 7, new EchoContentCoreNetwork());
+            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 8, new EchoContentCoreNetwork());
 
             //Start server
             DeltaWebServer server = new DeltaWebServer(conn, conn.GetUserPort(0));

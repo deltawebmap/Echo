@@ -31,9 +31,8 @@ namespace EchoContent.Http.World
             {
                 response.profiles.Add(new ResponseData_Profile
                 {
-                    steam_icon = p.icon,
                     steam_id = p.steam_id,
-                    steam_name = p.name,
+                    steam_token = conn.CreateSteamIdTokenString(p.steam_id),
                     last_seen = p.last_seen,
                     x = p.x,
                     y = p.y,
@@ -54,8 +53,7 @@ namespace EchoContent.Http.World
         class ResponseData_Profile
         {
             public string steam_id;
-            public string steam_name;
-            public string steam_icon;
+            public string steam_token;
             public DateTime last_seen;
             public float? x;
             public float? y;
