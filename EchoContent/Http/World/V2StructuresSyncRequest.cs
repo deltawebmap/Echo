@@ -116,8 +116,8 @@ namespace EchoContent.Http.World
             foreach (var t in structures)
             {
                 //Get data
-                StructureMetadata metadata = Program.conn.GetStructureMetadata().Where(x => x.names.Contains(t.classname)).FirstOrDefault();
-                int index = Program.conn.GetStructureMetadata().IndexOf(metadata);
+                StructureMetadata metadata = Program.structureMetadata.Where(x => x.names.Contains(t.classname)).FirstOrDefault();
+                int index = Program.structureMetadata.IndexOf(metadata);
 
                 //Produce flags
                 byte flags = 0;

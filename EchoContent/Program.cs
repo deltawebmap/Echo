@@ -1,6 +1,7 @@
 ﻿using EchoContent.Http.World.Definitions;
 using LibDeltaSystem;
 using LibDeltaSystem.Db.Content;
+using LibDeltaSystem.Entities;
 using LibDeltaSystem.WebFramework;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -18,11 +19,15 @@ namespace EchoContent
     class Program
     {
         public static DeltaConnection conn;
+        public static List<StructureMetadata> structureMetadata;
 
         static void Main(string[] args)
         {
             //Connect to database
-            conn = DeltaConnection.InitDeltaManagedApp(args, 0, 8, new EchoContentCoreNetwork());
+            conn = DeltaConnection.InitDeltaManagedApp(args, DeltaCoreNetServerType.API_ECHO, 0, 9);
+
+            //Get structure metadata
+            structureMetadata = conn.GetStructureMetadata().GetAwaiter().GetResult();
 
             //Start server
             DeltaWebServer server = new DeltaWebServer(conn, conn.GetUserPort(0));

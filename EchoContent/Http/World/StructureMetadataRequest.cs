@@ -20,7 +20,7 @@ namespace EchoContent.Http.World
             //Simply write the structure metadata
             await WriteJSON(new MetadataResponse
             {
-                metadata = Program.conn.GetStructureMetadata(),
+                metadata = Program.structureMetadata,
                 image_url = "https://icon-assets.deltamap.net/structures.png"
             });
         }
